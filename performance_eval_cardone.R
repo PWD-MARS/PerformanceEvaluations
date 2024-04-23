@@ -116,7 +116,7 @@ for (i in 1: nrow(parent_df)) {
                              obs_datetime = selected_event$dtime_est,
                              obs_level_ft = selected_event$level_ft,
                              rainfall_datetime = rainfall_datetime,
-                             rainfall_in = rainfall_in,
+                             rainfall_in = rainfall_in
     )
     
     
