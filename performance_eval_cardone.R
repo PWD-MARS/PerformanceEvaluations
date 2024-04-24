@@ -30,18 +30,19 @@ dir.create(paste(folder, current_date, sep = "\\"), showWarnings = FALSE)
 # get the data
 ow_all <- dbGetQuery(con, "SELECT * from fieldwork.tbl_ow")
 #ow_leveldata_raw <- dbGetQuery(con, "SELECT * FROM data.tbl_ow_leveldata_raw")
-gage_event <- dbGetQuery(con, "SELECT * FROM data.tbl_gage_event")
-smp_gage <- dbGetQuery(con, "SELECT * FROM admin.tbl_smp_gage")
+radar_event <- dbGetQuery(con, "SELECT * FROM data.tbl_radar_event")
+smp_radar <- dbGetQuery(con, "SELECT * FROM admin.tbl_smp_radar")
 
 
 # create a table with smp_id, ow_suffix, and rainevent_uid
 
 parent_df <- smp_id_df %>%
   inner_join(ow_all, by="smp_id") %>%
-  inner_join(smp_gage, by="smp_id") %>% 
-  inner_join(gage_event, by= "gage_uid") %>%
-  select(smp_id, ow_uid, ow_suffix, gage_event_uid, eventdatastart_edt) %>%
-  filter(eventdatastart_edt > as.Date("2021-01-01"))
+  inner_join(smp_radar, by="smp_id") %>% 
+  inner_join(radar_event, by= "radar_uid") %>%
+  select(smp_id, ow_uid, ow_suffix, radar_event_uid, eventdatastart_edt, eventdepth_in, eventpeakintensity_inhr) %>%
+  mutate(overtopping = NA) %>%
+  filter(eventdatastart_edt > as.Date("2023-01-01"))
 
 
 
@@ -58,20 +59,20 @@ for (i in 1: nrow(parent_df)) {
     
     temp_df <- parent_df[i,]
     
-    rain_start_date <- gage_event %>%
-      filter(gage_event_uid == temp_df[1, "gage_event_uid"]) %>%
+    rain_start_date <- radar_event %>%
+      filter(radar_event_uid == temp_df[1, "radar_event_uid"]) %>%
       select(eventdatastart_edt) %>%
       format("%Y-%m-%d") %>%
       pull
     
-    rain_end_date <- gage_event %>%
-      filter(gage_event_uid == temp_df[1, "gage_event_uid"]) %>%
+    rain_end_date <- radar_event %>%
+      filter(radar_event_uid == temp_df[1, "radar_event_uid"]) %>%
       select(eventdataend_edt) %>%
       format("%Y-%m-%d") %>%
       pull
     
     event <- temp_df %>%
-      select(gage_event_uid) %>%
+      select(radar_event_uid) %>%
       pull
     
     structure_name <- paste(temp_df$smp_id, temp_df$ow_suffix)
@@ -82,10 +83,10 @@ for (i in 1: nrow(parent_df)) {
     monitoringdata <- marsFetchMonitoringData(con = con, 
                                               target_id = temp_df$smp_id, 
                                               ow_suffix = temp_df$ow_suffix, 
-                                              source = "gage",
+                                              source = "radar",
                                               start_date = as.character(rain_start_date), 
                                               end_date = as.character(rain_end_date), 
-                                              sump_correct = FALSE,
+                                              sump_correct = TRUE,
                                               debug = TRUE,
                                               level = TRUE)
     
@@ -94,19 +95,19 @@ for (i in 1: nrow(parent_df)) {
     level_data <- monitoringdata[["Level Data"]]
     
     rain_plot_data <- monitoringdata[["Rainfall Data"]] %>%
-      dplyr::filter(gage_event_uid == temp_df$gage_event_uid)
+      dplyr::filter(radar_event_uid == temp_df$radar_event_uid)
     
     rainfall_datetime	<- rain_plot_data$dtime_est
     rainfall_in <- rain_plot_data$rainfall_in
     
     obs_data <- dplyr::full_join(monitoringdata[["Level Data"]], monitoringdata[["Rainfall Data"]], 
-                                 by = c("dtime_est", "gage_uid", "gage_event_uid")) %>% 
+                                 by = c("dtime_est", "radar_uid", "radar_event_uid")) %>% 
       dplyr::arrange(dtime_est) %>%
       dplyr::mutate(across(c("level_ft", "ow_uid"), ~ zoo::na.locf(., na.rm = FALSE))) %>%
       dplyr::mutate(across(c("level_ft", "ow_uid"), ~ zoo::na.locf(., fromLast = TRUE)))
     
     selected_event <- obs_data %>%
-      dplyr::filter(gage_event_uid == temp_df$gage_event_uid)
+      dplyr::filter(radar_event_uid == temp_df$radar_event_uid)
     
     
     
@@ -118,15 +119,42 @@ for (i in 1: nrow(parent_df)) {
                              rainfall_datetime = rainfall_datetime,
                              rainfall_in = rainfall_in
     )
-    
-    
-    
-    ggplot2::ggsave(paste0(folder,"\\" ,paste(temp_df$smp_id, temp_df$ow_suffix, temp_df$gage_event_uid, sep = "_"),".png"), plot = plot, width = 10, height = 8)
-    
+
+
+
+    ggplot2::ggsave(paste0(folder,"\\" ,paste(temp_df$smp_id, temp_df$ow_suffix, temp_df$radar_event_uid, sep = "_"),".png"), plot = plot, width = 10, height = 8)
+
     #Manually managing memory just in case
     rm(plot)
     rm(obs_data)
     rm(level_data)
+
+    
+    #Draindown time
+    # draindown_hr <- marsDraindown_hr(dtime_est = selected_event$dtime_est,
+    #                                  rainfall_in = selected_event$rainfall_in,
+    #                                  waterlevel_ft = selected_event$level_ft)
+    
+    #infiltration rate
+    # infiltration_inhr <- marsInfiltrationRate_inhr(event = event,
+    #                                                dtime_est = selected_event$dtime_est,
+    #                                                rainfall_in = selected_event$rainfall_in,
+    #                                                snapshot$dcia_ft2,
+    #                                                snapshot$assumption_orificeheight_ft,
+    #                                                snapshot$orifice_diam_in,
+    #                                                storage_depth_ft = snapshot$storage_depth_ft,
+    #                                                storage_vol_ft3 = snapshot$storage_volume_ft3,
+    #                                                waterlevel_ft = selected_event$level_ft,
+    #                                                depth_in = 6)
+    # 
+    #Observed relative storage utilization
+    # percentstorageused_relative <- marsPeakStorage_percent(waterlevel_ft = selected_event$level_ft - dplyr::first(selected_event$level_ft), storage_depth_ft = snapshot$storage_depth_ft) %>% round(4) 
+    
+    #overtopping
+    parent_df[i, "overtopping"] <- marsOvertoppingCheck_bool(selected_event$level_ft, storage_depth)
+    
+    write.table(parent_df, file =  "overtop.csv", sep = ",")
+    
     
   }, error=function(e){
     error_log[1,1] <<- i
@@ -135,3 +163,6 @@ for (i in 1: nrow(parent_df)) {
   }
   )
 }
+
+
+
