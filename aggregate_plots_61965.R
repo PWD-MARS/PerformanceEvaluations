@@ -86,9 +86,7 @@ smaller_than_design_after_jet_p
 
 
 #plot
-
-
-theilsen_plot <- ggplot(rainfall_overtopping_cs1, aes(x = eventdatastart_edt, y= eventdepth_in)) +
+plot <- ggplot(rainfall_overtopping_cs1, aes(x = eventdatastart_edt, y= eventdepth_in)) +
   geom_point(aes(color = overtopping, shape = overtopping), size = 5) +
   theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
   labs(x = "Date of Event", y = "Rain Event Depth (in)") + 
