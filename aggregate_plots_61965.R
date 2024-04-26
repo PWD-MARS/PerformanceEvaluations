@@ -15,34 +15,8 @@ library(ggplot2)
 library(pool)
 
 
-#connection 
-con <- dbPool(odbc(), dsn = "mars14_datav2", uid = Sys.getenv("shiny_uid"), pwd = Sys.getenv("shiny_pwd"))
-
-# SMP IDs for performance eval
-smp_id_df <- data.frame(smp_id = "61965")
-
-
-folder <- "\\\\pwdoows\\oows\\Watershed Sciences\\GSI Monitoring\\06 Special Projects\\59 Performance Evaluation of Private Sites\\61965\\Plots"
-current_date <- today()
-
-dir.create(paste(folder, current_date, sep = "\\"), showWarnings = FALSE)
-
-# get the data
-ow_all <- dbGetQuery(con, "SELECT * from fieldwork.tbl_ow")
-#ow_leveldata_raw <- dbGetQuery(con, "SELECT * FROM data.tbl_ow_leveldata_raw")
-gage_event <- dbGetQuery(con, "SELECT * FROM data.tbl_gage_event")
-smp_gage <- dbGetQuery(con, "SELECT * FROM admin.tbl_smp_gage")
-
-
-# create a table with smp_id, ow_suffix, and rainevent_uid
-
-parent_df <- smp_id_df %>%
-  inner_join(ow_all, by="smp_id") %>%
-  inner_join(smp_gage, by="smp_id") %>% 
-  inner_join(gage_event, by= "gage_uid") %>%
-  select(smp_id, ow_uid, ow_suffix, gage_event_uid, eventdatastart_edt, eventdepth_in, eventpeakintensity_inhr) %>%
-  mutate(overtopping = NA) 
-
+#read data 
+parent_df <- read.csv("//pwdoows/oows/Watershed Sciences/GSI Monitoring/06 Special Projects/59 Performance Evaluation of Private Sites/61965/Metrics/April_26_2024/overtop.csv")
 
 
 # aggregate plots of overtopping for CS1
