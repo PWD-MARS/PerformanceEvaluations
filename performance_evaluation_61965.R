@@ -22,7 +22,7 @@ con <- dbPool(odbc(), dsn = "mars14_datav2", uid = Sys.getenv("shiny_uid"), pwd 
 smp_id_df <- data.frame(smp_id = "61965")
 
 
-folder <- "\\\\pwdoows\\oows\\Watershed Sciences\\GSI Monitoring\\06 Special Projects\\59 Performance Evaluation of Private Sites\\61965\\Plots"
+folder <- "\\\\pwdoows\\oows\\Watershed Sciences\\GSI Monitoring\\06 Special Projects\\59 Performance Evaluation of Private Sites\\61965"
 current_date <- today()
 
 dir.create(paste(folder, current_date, sep = "\\"), showWarnings = FALSE)
@@ -41,6 +41,7 @@ parent_df <- smp_id_df %>%
   inner_join(smp_gage, by="smp_id") %>% 
   inner_join(gage_event, by= "gage_uid") %>%
   select(smp_id, ow_uid, ow_suffix, gage_event_uid, eventdatastart_edt, eventdepth_in, eventpeakintensity_inhr) %>%
+  filter(eventdatastart_edt > as.POSIXct("2021-01-01")) %>%
   mutate(overtopping = NA) 
 
 # recording errors
