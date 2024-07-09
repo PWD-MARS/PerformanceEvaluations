@@ -172,7 +172,7 @@ flow_peak_per_storm <- data.frame(gage_event_uid = as.integer(),
 
 for (i in 1:nrow(rain_event_data_peak)) {
   temp_flow_df <- flow_data_daily %>%
-    filter(Time >= rain_event_data_peak[i, "eventdatastart_est"] & Time <= rain_event_data_peak[i, "eventdataend_est"] + 1)
+    filter(Time >= rain_event_data_peak[i, "eventdatastart_est"] & Time <= rain_event_data_peak[i, "eventdataend_est"])
   
   if (nrow(temp_flow_df) !=  0) {
   temp_output <- data.frame(gage_event_uid = rain_event_data_peak[i, "gage_event_uid"],
@@ -198,6 +198,113 @@ ggplot(joined_rain_flow, aes(x = eventdepth_in, y= peak_flow)) +
   theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
   labs(x = "Rain Event Depth (in)", y = "Maximum Flow Rate during the Rain Event (MGD)") + 
   theme(legend.position = "none")
+
+
+# Compare before and after major events
+# Peak intensity before pipe change on June 2022
+peak_before_pipechange <- ggplot(filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01")), aes(x = eventpeakintensity_inhr, y= peak_flow)) +
+  geom_point(size = 2.5) +
+  theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
+  labs(x = "Rain Event Peak Intensity (in/hr)", y = "Maximum Flow Rate during the Rain Event (MGD)") + 
+  theme(legend.position = "none")
+
+# Peak intensity after pipe change on June 2022
+peak_after_pipechange <- ggplot(filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01")), aes(x = eventpeakintensity_inhr, y= peak_flow)) +
+  geom_point(size = 2.5) +
+  theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
+  labs(x = "Rain Event Peak Intensity (in/hr)", y = "Maximum Flow Rate during the Rain Event (MGD)") + 
+  theme(legend.position = "none")
+
+# Depth before pipe change on June 2022
+depth_before_pipechange <- ggplot(filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01")), aes(x = eventdepth_in, y= peak_flow)) +
+  geom_point(size = 2.5) +
+  theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
+  labs(x = "Rain Event Depth (in)", y = "Maximum Flow Rate during the Rain Event (MGD)") + 
+  theme(legend.position = "none")
+
+# Depth intensity after pipe change on June 2022
+depth_after_pipechange <- ggplot(filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01")), aes(x = eventdepth_in, y= peak_flow)) +
+  geom_point(size = 2.5) +
+  theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
+  labs(x = "Rain Event Depth (in)", y = "Maximum Flow Rate during the Rain Event (MGD)") + 
+  theme(legend.position = "none")
+
+
+# calculate the volume of water to sewer
+
+# Multiply the MGD by time step to get volume-then sum up during the storm
+all_fd_vol <- all_fd
+all_fd_vol["storm_volume_G"] <- (all_fd_vol$`Flow (MGD)`*5*1000000)/(24*60)
+all_fd_vol["date"] <- as.Date(all_fd_vol$Time)
+
+volume_df <- data.frame(gage_event_uid = 0,
+                        volume_G = 0)
+
+for (i in 1:nrow(joined_rain_flow)) {
+  temp_df <- all_fd_vol %>%
+    filter(date >= as.Date(joined_rain_flow[i, "eventdatastart_est"]) & date <= as.Date(joined_rain_flow[i, "eventdataend_est"]))
+  
+  if (nrow(temp_df) !=  0) {
+    volume <- data.frame(gage_event_uid = joined_rain_flow[i, "gage_event_uid"],
+                         volume_G = sum(temp_df$storm_volume_G))
+  }
+  
+  volume_df <- bind_rows(volume_df, volume)
+}
+
+joined_rain_flow <- joined_rain_flow %>%
+  inner_join(volume_df, by = "gage_event_uid") %>%
+  distinct()
+
+# Sewer volume plots
+# Peak intensity before pipe change on June 2022
+peak_before_pipechange_vs_vol <- ggplot(filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01")), aes(x = eventpeakintensity_inhr, y= volume_G)) +
+  geom_point(size = 2.5) +
+  theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
+  labs(x = "Rain Event Peak Intensity (in/hr)", y = "Volume Stormwater into Sewer During the Rain Event (G)") + 
+  theme(legend.position = "none")
+
+# Peak intensity after pipe change on June 2022
+peak_after_pipechange_vs_vol <- ggplot(filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01")), aes(x = eventpeakintensity_inhr, y= volume_G)) +
+  geom_point(size = 2.5) +
+  theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
+  labs(x = "Rain Event Peak Intensity (in/hr)", y = "Volume Stormwater into Sewer During the Rain Event (G)") + 
+  theme(legend.position = "none")
+
+# Depth before pipe change on June 2022
+depth_before_pipechange_vs_vol <- ggplot(filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01")), aes(x = eventdepth_in, y= volume_G)) +
+  geom_point(size = 2.5) +
+  theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
+  labs(x = "Rain Event Depth (in)", y = "Volume Stormwater into Sewer During the Rain Event (G)") + 
+  theme(legend.position = "none")
+
+# Depth intensity after pipe change on June 2022
+depth_after_pipechange_vs_vol <- ggplot(filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01")), aes(x = eventdepth_in, y= volume_G)) +
+  geom_point(size = 2.5) +
+  theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
+  labs(x = "Rain Event Depth (in)", y = "Volume Stormwater into Sewer During the Rain Event (G)") + 
+  theme(legend.position = "none")
+
+
+# metric calc- volume/depth
+filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01")) -> before
+filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01")) -> after
+metric_before_voldepth <- sum(before$volume_G)/sum(before$eventdepth_in)
+metric_after_voldepth <- sum(after$volume_G)/sum(after$eventdepth_in)
+
+
+# metric calc- volume/peak
+metric_before_volpeak <- sum(before$volume_G)/sum(before$eventpeakintensity_inhr)
+metric_after_volpeak <- sum(after$volume_G)/sum(after$eventpeakintensity_inhr)
+
+# metric- maxflow/depth
+metric_before_flowdepth <- sum(before$peak_flow)/sum(before$eventdepth_in)
+metric_after_flowdepth <- sum(after$peak_flow)/sum(after$eventdepth_in)
+
+# metric- maxflow/peak
+metric_before_flowpeak <- sum(before$peak_flow)/sum(before$eventpeakintensity_inhr)
+metric_after_flowpeak <- sum(after$peak_flow)/sum(after$eventpeakintensity_inhr)
+
 
 # Calculating the peak intesity over an hour instead of 15-minute
 rain_data_filtered <- rain_data %>%
