@@ -342,8 +342,8 @@ peak_after_divcontrol_vs_vol <- ggplot(filter(joined_rain_flow, eventdatastart_e
 
 
 # metric calc- volume/depth
-filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01")) -> before
-filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01")) -> after
+before <- filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01")) 
+after <- filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01")) 
 metric_before_voldepth <- sum(before$volume_G)/sum(before$eventdepth_in)
 metric_after_voldepth <- sum(after$volume_G)/sum(after$eventdepth_in)
 
@@ -363,6 +363,113 @@ metric_after_flowdepth <- sum(after$peak_flow)/sum(after$eventdepth_in)
 # metric- maxflow/peak
 metric_before_flowpeak <- sum(before$peak_flow)/sum(before$eventpeakintensity_inhr)
 metric_after_flowpeak <- sum(after$peak_flow)/sum(after$eventpeakintensity_inhr)
+
+
+# Calculating metrics incorporating drainage area for pipe change
+da_a1_1b_ft2 <- 99415.10 + 159987.07 
+
+#### Pipe change metrics
+# total volume of overflow over diversion structure
+total_volume_overflow_mg_before_pipe_millcreek <- filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01") & eventdatastart_est > as.Date("2018-12-19")) %>%
+  select(volume_MG) %>%
+  sum()
+
+total_volume_overflow_mg_after_pipe_millcreek <- filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01")) %>%
+  select(volume_MG) %>%
+  sum()
+
+# total volume of rainfall draining to the system
+total_volume_rain_ft3_before_pipe_system <- (filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01") & eventdatastart_est > as.Date("2018-12-19")) %>%
+  select(eventdepth_in) %>%
+  sum())*da_a1_1b_ft2/12
+
+total_volume_rain_ft3_after_pipe_system <- (filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01")) %>%
+  select(eventdepth_in) %>%
+  sum())*da_a1_1b_ft2/12
+
+
+# total volume of overflow over diversion structure below 1.5 in 
+total_volume_overflow_mg_before_pipe_millcreek_1.5 <- filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01") & eventdatastart_est > as.Date("2018-12-19") & eventdepth_in < 1.5) %>%
+  select(volume_MG) %>%
+  sum()
+
+total_volume_overflow_mg_after_pipe_millcreek_1.5 <- filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01") & eventdepth_in < 1.5) %>%
+  select(volume_MG) %>%
+  sum()
+
+# total volume of rainfall draining to the system
+total_volume_rain_ft3_before_pipe_system_1.5 <- (filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01") & eventdatastart_est > as.Date("2018-12-19") & eventdepth_in < 1.5) %>%
+                                               select(eventdepth_in) %>%
+                                               sum())*da_a1_1b_ft2/12
+
+total_volume_rain_ft3_after_pipe_system_1.5 <- (filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01") & eventdepth_in < 1.5) %>%
+                                              select(eventdepth_in) %>%
+                                              sum())*da_a1_1b_ft2/12
+
+
+# metric calc- volume/peak
+# metric calc- volume/peak
+metric_before_voldepth_smallar <- sum(filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01") & eventdatastart_est > as.Date("2018-12-19")) $volume_G)/sum(filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01") & eventdatastart_est > as.Date("2018-12-19")) $eventdepth_in)
+metric_after_voldepth_smaller <- sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01") ) $volume_G)/sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01")) $eventdepth_in)
+
+
+
+metric_before_voldepth_smallar1.5 <- sum(filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01") & eventdatastart_est > as.Date("2018-12-19") & eventdepth_in < 1.5) $volume_G)/sum(filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01") & eventdepth_in < 1.5) $eventdepth_in)
+metric_after_voldepth_smaller1.5 <- sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01") & eventdepth_in < 1.5) $volume_G)/sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01") & eventdepth_in < 1.5) $eventdepth_in)
+
+
+
+
+#### Forebay lowering and DST raising metrics
+# total volume of overflow over diversion structure
+total_volume_rain_mg_before_forebay_millcreek <- filter(joined_rain_flow, eventdatastart_est < as.Date("2018-12-19")) %>%
+  select(volume_MG) %>%
+  sum()
+
+total_volume_rain_mg_after_forebay_millcreek <- filter(joined_rain_flow, eventdatastart_est > as.Date("2018-12-19") & eventdatastart_est < as.Date("2022-06-01")) %>%
+  select(volume_MG) %>%
+  sum()
+
+# total volume of rainfall draining to the system
+total_volume_rain_ft3_before_forebay_system <- (filter(joined_rain_flow, eventdatastart_est < as.Date("2018-12-19")) %>%
+                                               select(eventdepth_in) %>%
+                                               sum())*da_a1_1b_ft2/12
+
+total_volume_rain_ft3_after_forebay_system <- (filter(joined_rain_flow, eventdatastart_est > as.Date("2018-12-19") & eventdatastart_est < as.Date("2022-06-01")) %>%
+                                              select(eventdepth_in) %>%
+                                              sum())*da_a1_1b_ft2/12
+
+
+# total volume of overflow over diversion structure below 1.5 in 
+total_volume_rain_mg_before_forebay_millcreek_1.5 <- filter(joined_rain_flow, eventdatastart_est < as.Date("2018-12-19") & eventdepth_in < 1.5) %>%
+  select(volume_MG) %>%
+  sum()
+
+total_volume_rain_mg_after_forebay_millcreek_1.5 <- filter(joined_rain_flow, eventdatastart_est > as.Date("2018-12-19") & eventdatastart_est < as.Date("2022-06-01") & eventdepth_in < 1.5) %>%
+  select(volume_MG) %>%
+  sum()
+
+# total volume of rainfall draining to the system
+total_volume_rain_ft3_before_forebay_system_1.5 <- (filter(joined_rain_flow, eventdatastart_est < as.Date("2018-12-19") & eventdepth_in < 1.5) %>%
+                                               select(eventdepth_in) %>%
+                                               sum())*da_a1_1b_ft2/12
+
+total_volume_rain_ft3_after_forebay_system_1.5 <- (filter(joined_rain_flow, eventdatastart_est > as.Date("2018-12-19") & eventdatastart_est < as.Date("2022-06-01") & eventdepth_in < 1.5) %>%
+                                              select(eventdepth_in) %>%
+                                              sum())*da_a1_1b_ft2/12
+
+# metric calc- volume/peak
+metric_before_voldepth_forebay_smallar <- sum(filter(joined_rain_flow, eventdatastart_est < as.Date("2018-12-19")) $volume_G)/sum(filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01"))$eventdepth_in)
+metric_after_voldepth_forebay_smaller <- sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2018-12-19") & eventdatastart_est < as.Date("2022-06-01"))$volume_G)/sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01"))$eventdepth_in)
+
+
+
+
+# metric calc- volume/peak < 1.5 in
+metric_before_voldepth_forebay_smallar1.5 <- sum(filter(joined_rain_flow, eventdatastart_est < as.Date("2018-12-19") & eventdepth_in < 1.5) $volume_G)/sum(filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01") & eventdepth_in < 1.5) $eventdepth_in)
+metric_after_voldepth_forebay_smaller1.5 <- sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2018-12-19") & eventdatastart_est < as.Date("2022-06-01") & eventdepth_in < 1.5) $volume_G)/sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01") & eventdepth_in < 1.5) $eventdepth_in)
+
+
 
 
 # Calculating the peak intesity over an hour instead of 15-minute
