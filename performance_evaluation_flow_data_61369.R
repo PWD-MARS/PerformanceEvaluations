@@ -17,6 +17,7 @@ library(readr)
 library(egg)
 library(padr)
 library(zoo)
+library(data.table)
 
 
 #connection 
@@ -265,7 +266,7 @@ peak_before_pipechange_vs_vol <- ggplot(filter(joined_rain_flow, eventdatastart_
   theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
   labs(x = "Rain Event Peak Intensity (in/hr)", y = "Volume Run-off through Diversion Structure During the Rain Event (MG)") + 
   theme(legend.position = "none") +
-  labs(title="Dependable Distribution Wetland (61369) before Pipe Change on June 2022")
+  labs(title="Dependable Distribution Wetland (61369) before Pipe Change (2018-12-19 to 2022-06-01)")
 
 # Peak intensity after pipe change on June 2022
 peak_after_pipechange_vs_vol <- ggplot(filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01")), aes(x = eventpeakintensity_inhr, y= volume_MG)) +
@@ -279,22 +280,26 @@ peak_after_pipechange_vs_vol <- ggplot(filter(joined_rain_flow, eventdatastart_e
 depth_before_pipechange_vs_vol <- ggplot(filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01") & eventdatastart_est > as.Date("2018-12-19")), aes(x = eventdepth_in, y= volume_MG)) +
   geom_point(size = 3.5, color = "blue") +
   theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
-  labs(x = "Rain Event Depth (in)", y = "Volume Run-off through Diversion Structure During the Rain Event (MG)") + 
+  labs(x = "Rain Event Depth (in)", y = "Volume Overflow through Diversion Structure During the Rain Event (MG)") + 
+  scale_y_continuous(limits = c(0, 0.35)) + 
+  scale_x_continuous(limits = c(0, 3.6)) + 
   theme(legend.position = "none") +
   geom_vline(xintercept= 1.5, color = "darkgreen", size=2, linetype="dashed") +
   annotate("text", x = 1.2, y = 0.2, color = "purple", label = 'Design Storm: 1.5"', size = 20/.pt) +
-  labs(title="Dependable Distribution Wetland (61369) before Pipe Change on June 2022")
+  labs(title="Dependable Distribution Wetland (61369) before Pipe Change (2018-12-19 to 2022-06-01)")
 
 
 # Depth intensity after pipe change on June 2022
 depth_after_pipechange_vs_vol <- ggplot(filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01")), aes(x = eventdepth_in, y= volume_MG)) +
   geom_point(size = 3.5, color = "blue") +
   theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
-  labs(x = "Rain Event Depth (in)", y = "Volume Run-off through Diversion Structure During the Rain Event (MG)") + 
+  labs(x = "Rain Event Depth (in)", y = "Volume Overflow through Diversion Structure During the Rain Event (MG)") + 
+  scale_y_continuous(limits = c(0, 0.35)) + 
+  scale_x_continuous(limits = c(0, 3.6)) + 
   theme(legend.position = "none") +
   geom_vline(xintercept= 1.5, color = "darkgreen", size=2, linetype="dashed") +
   annotate("text", x = 1.2, y = 0.2, color = "purple", label = 'Design Storm: 1.5"', size = 20/.pt) +
-  labs(title="Dependable Distribution Wetland (61369) after Pipe Change on June 2022")
+  labs(title="Dependable Distribution Wetland (61369) after Pipe Change (2022-06-01)")
 
 
 
@@ -306,17 +311,17 @@ depth_before_divcontrol_vs_vol <- ggplot(filter(joined_rain_flow, eventdatastart
   theme(legend.position = "none") +
   geom_vline(xintercept= 1.5, color = "darkgreen", size=2, linetype="dashed") +
   annotate("text", x = 1.2, y = 0.3, color = "purple", label = 'Design Storm: 1.5"', size = 20/.pt) +
-  labs(title="Dependable Distribution Wetland (61369) before Forebay Lowring/Weir Raising on Dec 2018")
+  labs(title="Dependable Distribution Wetland (61369) before Forebay Lowering/Weir Raising (2018-12-19)")
 
 # Depth after diversion control raise 12/19/2018
 depth_after_divcontrol_vs_vol <- ggplot(filter(joined_rain_flow, eventdatastart_est > as.Date("2018-12-19") & eventdatastart_est < as.Date("2022-06-01")), aes(x = eventdepth_in, y= volume_MG)) +
   geom_point(size = 3.5, color = "blue") +
   theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
-  labs(x = "Rain Event Depth (in)", y = "Volume Overflow through Diversion Structure During the Rain Event (G)") + 
+  labs(x = "Rain Event Depth (in)", y = "Volume Overflow through Diversion Structure During the Rain Event (MG)") + 
   theme(legend.position = "none") +
   geom_vline(xintercept= 1.5, color = "darkgreen", size=2, linetype="dashed") +
   annotate("text", x = 1.2, y = 0.3, color = "purple", label = 'Design Storm: 1.5"', size = 20/.pt) +
-  labs(title="Dependable Distribution Wetland (61369) after Forebay Lowring/Weir Raising on Dec 2018")
+  labs(title="Dependable Distribution Wetland (61369) after Forebay Lowering/Weir Raising (2018-12-19 to 2022-06-01)")
 
 # Peak before diversion control raise 12/19/2018
 peak_before_divcontrol_vs_vol <- ggplot(filter(joined_rain_flow, eventdatastart_est < as.Date("2018-12-19")), aes(x = eventpeakintensity_inhr, y= volume_MG)) +
@@ -326,18 +331,55 @@ peak_before_divcontrol_vs_vol <- ggplot(filter(joined_rain_flow, eventdatastart_
   theme(legend.position = "none") +
   geom_vline(xintercept= 1.5, color = "darkgreen", size=2, linetype="dashed") +
   annotate("text", x = 1.2, y = 0.3, color = "purple", label = 'Design Storm: 1.5"', size = 20/.pt) +
-  labs(title="Dependable Distribution Wetland (61369) before Forebay Lowring/Weir Raising on Dec 2018")
+  labs(title="Dependable Distribution Wetland (61369) before Forebay Lowering/Weir Raising (2018-12-19)")
 
 
 # Peak after diversion control raise 12/19/2018
 peak_after_divcontrol_vs_vol <- ggplot(filter(joined_rain_flow, eventdatastart_est > as.Date("2018-12-19") & eventdatastart_est < as.Date("2022-06-01")), aes(x = eventpeakintensity_inhr, y= volume_MG)) +
   geom_point(size = 3.5, color = "blue") +
   theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
-  labs(x = "Rain Event Peak Intensity  (in/hr)", y = "Volume Overflow through Diversion Structure During the Rain Event (G)") + 
+  labs(x = "Rain Event Peak Intensity  (in/hr)", y = "Volume Overflow through Diversion Structure During the Rain Event (MG)") + 
   theme(legend.position = "none") +
   geom_vline(xintercept= 1.5, color = "darkgreen", size=2, linetype="dashed") +
   annotate("text", x = 1.2, y = 0.3, color = "purple", label = 'Design Storm: 1.5"', size = 20/.pt) +
-  labs(title="Dependable Distribution Wetland (61369) after Forebay Lowring/Weir Raising on Dec 2018")
+  labs(title="Dependable Distribution Wetland (61369) after Forebay Lowering/Weir Raising (2018-12-19 to 2022-06-01)")
+
+
+
+# combined before/after both events
+ggarrange(depth_before_divcontrol_vs_vol, depth_after_pipechange_vs_vol, nrow = 1, ncol = 2)
+
+
+# combined graph
+
+joined_rain_flow_combined <- joined_rain_flow %>%
+  filter(eventdatastart_est < as.Date("2018-12-19") | eventdatastart_est > as.Date("2022-06-01")) %>%
+  mutate(`When Storm Occured?` =  fifelse(eventdatastart_est < as.Date("2018-12-19"), "Before Retrofit","After Retrofit"))
+
+joined_rain_flow_combined$`When Storm Occured?` <- factor(joined_rain_flow_combined$`When Storm Occured?`, levels = c("Before Retrofit","After Retrofit"))
+
+# Depth intensity after pipe change on June 2022
+combo_performance_plot <- ggplot(joined_rain_flow_combined, aes(x = eventdepth_in, y= volume_MG, color = `When Storm Occured?`)) +
+  geom_point(size = 4) +
+  theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  labs(x = "Rain Event Depth (in)", y = "Volume Bypass through Diversion Structure DST-010-01 (MG)") + 
+  scale_y_continuous(limits = c(0, 0.35)) + 
+  scale_x_continuous(limits = c(0, 3.6)) +
+  theme(legend.position = "bottom", plot.caption = element_text(hjust = 0, size = 15)) + 
+  scale_color_manual(values = c("#FC4E07", "#00AFBB"), name = "") +
+  geom_vline(xintercept= 1.5, color = "darkgreen", size=2, linetype="dashed") +
+  annotate("text", x = 1.55, y = 0.25, color = "darkgreen", label = 'Design Storm: 1.5"', size = 20/.pt, angle = 90) +
+  labs(title="Dependable Distribution Wetland (61369) Bypass to Mill Creek Sewer", caption = "*Retrofits include 1) lowering earthen dam of forebay 1 and raising bypass weirs 3 inches in DST-010-01 on 2018-12-19 and 2) rerouting inflow piping to reduce restrictions due to utility conflicts on 2022-06-01")
+
+
+
+
+box_p <- ggplot(joined_rain_flow_combined, aes(x=as.factor(`When Storm Occured?`), y=volume_MG)) + 
+  geom_boxplot(color = "blue") +
+  theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
+  labs(x = "When Storm Occured?", y = "Volume Bypass through Diversion Structure DST-010-01 (MG)") +
+  labs(title="Box Plot of Dependable Distribution Wetland (61369) Bypass to Mill Creek Sewer")
 
 
 
@@ -366,7 +408,7 @@ metric_after_flowpeak <- sum(after$peak_flow)/sum(after$eventpeakintensity_inhr)
 
 
 # Calculating metrics incorporating drainage area for pipe change
-da_a1_1b_ft2 <- 99415.10 + 159987.07 
+da_a1_1b_ft2 <- 99415.10 + 159987.07 + 52255.54 + 84535.73
 
 #### Pipe change metrics
 # total volume of overflow over diversion structure
@@ -414,7 +456,7 @@ metric_after_voldepth_smaller <- sum(filter(joined_rain_flow, eventdatastart_est
 
 
 
-metric_before_voldepth_smallar1.5 <- sum(filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01") & eventdatastart_est > as.Date("2018-12-19") & eventdepth_in < 1.5) $volume_G)/sum(filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01") & eventdepth_in < 1.5) $eventdepth_in)
+metric_before_voldepth_smallar1.5 <- sum(filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01") & eventdatastart_est > as.Date("2018-12-19") & eventdepth_in < 1.5) $volume_G)/sum(filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01") & eventdatastart_est > as.Date("2018-12-19") & eventdepth_in < 1.5) $eventdepth_in)
 metric_after_voldepth_smaller1.5 <- sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01") & eventdepth_in < 1.5) $volume_G)/sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01") & eventdepth_in < 1.5) $eventdepth_in)
 
 
@@ -460,14 +502,14 @@ total_volume_rain_ft3_after_forebay_system_1.5 <- (filter(joined_rain_flow, even
 
 # metric calc- volume/peak
 metric_before_voldepth_forebay_smallar <- sum(filter(joined_rain_flow, eventdatastart_est < as.Date("2018-12-19")) $volume_G)/sum(filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01"))$eventdepth_in)
-metric_after_voldepth_forebay_smaller <- sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2018-12-19") & eventdatastart_est < as.Date("2022-06-01"))$volume_G)/sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01"))$eventdepth_in)
+metric_after_voldepth_forebay_smaller <- sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2018-12-19") & eventdatastart_est < as.Date("2022-06-01"))$volume_G)/sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2018-12-19") & eventdatastart_est < as.Date("2022-06-01"))$eventdepth_in)
 
 
 
 
 # metric calc- volume/peak < 1.5 in
 metric_before_voldepth_forebay_smallar1.5 <- sum(filter(joined_rain_flow, eventdatastart_est < as.Date("2018-12-19") & eventdepth_in < 1.5) $volume_G)/sum(filter(joined_rain_flow, eventdatastart_est < as.Date("2022-06-01") & eventdepth_in < 1.5) $eventdepth_in)
-metric_after_voldepth_forebay_smaller1.5 <- sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2018-12-19") & eventdatastart_est < as.Date("2022-06-01") & eventdepth_in < 1.5) $volume_G)/sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2022-06-01") & eventdepth_in < 1.5) $eventdepth_in)
+metric_after_voldepth_forebay_smaller1.5 <- sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2018-12-19") & eventdatastart_est < as.Date("2022-06-01") & eventdepth_in < 1.5) $volume_G)/sum(filter(joined_rain_flow, eventdatastart_est > as.Date("2018-12-19") & eventdatastart_est < as.Date("2022-06-01") & eventdepth_in < 1.5) $eventdepth_in)
 
 
 
