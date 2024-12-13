@@ -360,19 +360,34 @@ joined_rain_flow_combined$`When Storm Occured?` <- factor(joined_rain_flow_combi
 
 # Depth intensity after pipe change on June 2022
 combo_performance_plot <- ggplot(joined_rain_flow_combined, aes(x = eventdepth_in, y= volume_MG, color = `When Storm Occured?`)) +
-  geom_point(size = 4) +
-  theme(text = element_text(size = 20), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
-  geom_smooth(method = "lm", se = FALSE) + 
+  geom_point(size = 10) +
+  theme(text = element_text(size = 60), axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1)) + 
+  #geom_smooth(method = "lm", se = FALSE) + 
   labs(x = "Rain Event Depth (in)", y = "Volume Bypass through Diversion Structure DST-010-01 (MG)") + 
   scale_y_continuous(limits = c(0, 0.35)) + 
   scale_x_continuous(limits = c(0, 3.6)) +
   theme(legend.position = "bottom", plot.caption = element_text(hjust = 0, size = 15)) + 
   scale_color_manual(values = c("#FC4E07", "#00AFBB"), name = "") +
   geom_vline(xintercept= 1.5, color = "darkgreen", size=2, linetype="dashed") +
-  annotate("text", x = 1.55, y = 0.25, color = "darkgreen", label = 'Design Storm: 1.5"', size = 20/.pt, angle = 90) +
+  annotate("text", x = 1.55, y = 0.25, color = "darkgreen", label = 'Design Storm: 1.5"', size = 30/.pt, angle = 90) +
   labs(title="Dependable Distribution Wetland (61369) Bypass to Mill Creek Sewer", caption = "*Retrofits include 1) lowering earthen dam of forebay 1 and raising bypass weirs 3 inches in DST-010-01 on 2018-12-19 and 2) rerouting inflow piping to reduce restrictions due to utility conflicts on 2022-06-01")
 
+# increased size
 
+combo_performance_plot_enlarged <- ggplot(joined_rain_flow_combined, aes(x = eventdepth_in, y= volume_MG, color = `When Storm Occured?`)) +
+  geom_point(size = 15) +
+  theme(text = element_text(size = 60), 
+        axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 1),
+        plot.caption = element_text(hjust = 0, size = 40), # Increased caption size to 20
+        legend.position = "bottom") + 
+  labs(x = "Rain Event Depth (in)", y = "Volume Bypass through Diversion Structure DST-010-01 (MG)",
+       title = "Dependable Wetland (61369) Bypass to Mill Creek Sewer",
+       caption = "*Retrofits: 1) Lowering earthen dam of forebay 1 and raising bypass weirs 3\" in DST-010-01 on 2018-12-19 and 2) Rerouting inflow piping to reduce restrictions on 2022-06-01") + 
+  scale_y_continuous(limits = c(0, 0.35)) + 
+  scale_x_continuous(limits = c(0, 3.6)) +
+  scale_color_manual(values = c("#FC4E07", "#00AFBB"), name = "") +
+  geom_vline(xintercept = 1.5, color = "darkgreen", size = 2, linetype = "dashed") +
+  annotate("text", x = 1.55, y = 0.25, color = "darkgreen", label = 'Design Storm: 1.5"', size = 40 / .pt, angle = 90)
 
 
 box_p <- ggplot(joined_rain_flow_combined, aes(x=as.factor(`When Storm Occured?`), y=volume_MG)) + 
