@@ -87,23 +87,18 @@ rain_data <- marsFetchRainfallData(
   end_date = eval_end,
   'gage'
 ) %>%
-  mutate(dtime_est = force_tz(dtime, "EST")) %>%
-  mutate(rainfall_in = replace_na(rainfall_in, 0))
+  mutate(dtime_est = force_tz(dtime, "EST"))
 
-# Combine cs1, ow1, and rain data into single dataframe
+# Combine cs1 and ow1 data into single dataframe
 full_data <- right_join(cs1_monitor_data, ow1_monitor_data, by = 'dtime_est') %>%
-  right_join(rain_data, by = 'dtime_est') %>%
-  select(dtime_est, ow1level_ft, cs1level_ft, rainfall_in)
+  left_join(rain_data, by = 'dtime_est') %>%
+  select(dtime_est, ow1level_ft, cs1level_ft, rainfall_in) %>%
+  mutate(rainfall_in = replace_na(rainfall_in, 0))
 
 rm(cs1_monitor_data, ow1_monitor_data, rain_data)
 
 
-# Import rain event data
-# event_data <- marsFetchRainEventData(mars_con,
-#                                       target_id = smp_id,
-#                                       source = 'gage',
-#                                       start_date = eval_start,
-#                                       end_date = eval_end) %>%
+# Import event metrics
 event_data <- read.csv('63761/output/metrics_2025-02-28.csv') %>%
   mutate(eventdatastart_est = as_datetime(eventdatastart_est), 
          eventdataend_est = as_datetime(eventdataend_est)) %>%
@@ -116,7 +111,7 @@ for(i in 1:length(event_data$gage_event_uid)) {
   full_data_i <- full_data %>%
     filter(dtime_est >= event_data$eventdatastart_est[i] - hours(6) & 
              dtime_est <= event_data$eventdataend_est[i] + days(1))
-  
+           
   # Reshape monitoring data
   reshaped_data_i <- full_data_i %>%
     select(-rainfall_in) %>%
@@ -129,13 +124,15 @@ for(i in 1:length(event_data$gage_event_uid)) {
     ylab("Water Level (ft)") +
     xlab("Date") +
     labs(title = paste0('Water Level Response'), 
-         subtitle = paste0('Max Response = ', event_data$peak_level_ft[i], 
-                           ' ft ,  Peak Intensity = ', round(event_data$rpsu[i], digits = 1), "% of storage used")) + 
+         subtitle = paste0('Max Response = ', 
+                           round(event_data$peak_level_ft_ow[i], digits = 2), 
+                           ' ft ,  Peak Intensity = ', 
+                           round(event_data$rpsu[i], digits = 1), "% of storage used")) + 
     scale_y_continuous(
       breaks = scales::breaks_width(1),
       labels = scales::number_format(accuracy = 0.1)
     ) +
-    scale_x_datetime(date_breaks = '6 hours', minor_breaks = '3 hours') +
+    scale_x_datetime(date_breaks = "12 hours", minor_breaks = "6 hours") +
     labs(color = "Location")
   if (length(key_depths) > 0 & length(key_elev_descrips) > 0) {
     for(j in c(2, 3, 5, 7)){
@@ -143,15 +140,16 @@ for(i in 1:length(event_data$gage_event_uid)) {
         wl_ts + geom_hline(
           yintercept = key_depths[j],
           color = "black",
-          size = 0.8,
+          size = 0.6,
           linetype = "dashed"
         ) +
         annotate(
           "text",
-          x = event_data$eventdatastart_est[i],
-          y = key_depths[j] + 0.1,
+          size = unit(2.6, 'pt'),
+          x = event_data$eventdataend_est[i] + days(1),
+          y = key_depths[j] + 0.05,
           label = key_elev_descrips[j],
-          hjust = 0
+          hjust = 1
         )
     }
   }
@@ -163,7 +161,7 @@ for(i in 1:length(event_data$gage_event_uid)) {
     labs(title = paste0("Rainfall from ", data_start_date, " Storm"), 
          subtitle = paste0("Rainfall Depth = ", event_data$eventdepth_in[i], 
                            " in ,  Peak Intensity = ", event_data$eventpeakintensity_in[i], " in/hr")) +
-    scale_x_datetime(date_breaks = "6 hours", minor_breaks = "3 hours") +
+    scale_x_datetime(date_breaks = "12 hours", minor_breaks = "6 hours") +
     theme(
       axis.title.x = element_blank(),
       axis.text.x = element_blank(),
@@ -174,7 +172,7 @@ for(i in 1:length(event_data$gage_event_uid)) {
     rain_ts,
     wl_ts,
     nrow = 2,
-    heights = c(1, 4),
+    heights = c(1, 3),
     legend = "bottom"
   )
   ggsave(paste0("63761/output/storm_plot_", data_start_date, ".png"))

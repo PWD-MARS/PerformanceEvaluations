@@ -7,13 +7,11 @@ library(tidyverse)
 library(ggplot2)
 library(pwdgsi)
 library(odbc)
-library(DBI)
 library(lubridate)
 library(magrittr)
 library(pool)
 
 # Create database connection
-
 mars_con <- dbPool(
   drv = RPostgres::Postgres(),
   host = "PWDMARSDBS1",
@@ -32,10 +30,12 @@ plot_ts <-
            eval_start,
            eval_end,
            sys_invert_elev,
+           loc_invert_elev,
            key_elevs,
            key_elev_descrips,
            key_dates,
            key_date_descrips) {
+    
     # Import monitoring data and create dtime_est col
     smp_monitor_data <- marsFetchLevelData(
       mars_con,
@@ -43,15 +43,14 @@ plot_ts <-
       ow_suffix = ow_suffix,
       start_date = eval_start,
       end_date = eval_end,
-      sump_correct = FALSE
-    ) %>%
+      sump_correct = FALSE) %>%
       mutate(dtime_est = with_tz(dtime, tzone = 'EST'))
     
     # Create vector of key depths
     key_depths <- key_elevs - sys_invert_elev
     
     # Find reference elevation (depth of system invert relative to location invert)
-    ref_depth <- sys_invert_elev - key_elevs[1]
+    ref_depth <- sys_invert_elev - loc_invert_elev
     
     ts <-
       ggplot(smp_monitor_data, aes(x = dtime_est, y = level_ft - ref_depth)) +
@@ -77,8 +76,8 @@ plot_ts <-
             linetype = "dashed"
           ) +
         annotate("text",
-                 x = min(smp_monitor_data$dtime_est),
-                 y = key_depths[i] - 0.2,
+                 x = min(smp_monitor_data$dtime_est)-months(2),
+                 y = key_depths[i] + 0.2,
                  label = key_elev_descrips[i],
                  hjust = 0)
       }
@@ -117,17 +116,18 @@ key_date_descrips <- c()
 
 # CS1
 cs1_suffix <- 'CS1'
-cs1_elevs <- c(109.0, 112.1, 111.9, 112.75, 114.5, 117.4, 118.7)
+cs1_elevs <- c(109.0, 111.9, 
+               112.8, 114.5, 117.4, 118.7)
 cs1_elev_descrips <-
   c(
     "bottom of CS1",
-    "dist pipe invert",
     '1" orifice invert',
     '2" orifice invert',
     "weir notch elevation",
     "top of CS1 weir",
     "CS1 rim"
   )
+cs1_invert_elev <- 109.0
 cs1_plot <-
   plot_ts(
     smp_id,
@@ -135,6 +135,7 @@ cs1_plot <-
     eval_start,
     eval_end,
     sys_invert_elev,
+    cs1_invert_elev,
     cs1_elevs,
     cs1_elev_descrips,
     key_dates,
@@ -145,8 +146,10 @@ ggsave(paste0("63761/output/cs1_ts_", eval_end, ".png"))
 
 # OW1
 ow1_suffix <- "OW1"
-ow1_elevs <- c(111.98, 119.4)
-ow1_elev_descrips <- c("bottom of OW1", "top of OW1")
+ow1_elevs <- c(111.5, 111.98, 117.0, 119.4)
+ow1_elev_descrips <- c('bottom of stone', 'bottom of OW1', 
+                       'top of stone', 'top of OW1')
+ow1_invert_elev <- 111.98
 ow1_plot <-
   plot_ts(
     smp_id,
@@ -154,9 +157,14 @@ ow1_plot <-
     eval_start,
     eval_end,
     sys_invert_elev,
+    ow1_invert_elev,
     ow1_elevs,
     ow1_elev_descrips,
     key_dates,
     key_date_descrips
   )
 ggsave(paste0("63761/output/ow1_ts_", eval_end, ".png"))
+
+# Close database connection
+poolClose(mars_con)
+
