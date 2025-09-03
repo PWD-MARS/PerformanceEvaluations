@@ -98,7 +98,14 @@ write_csv(x = smp_metrics,
 # Plot event depth vs. rpsu  
 ggplot(data = smp_metrics, mapping = aes(x = eventdepth_in, y = rpsu)) + 
   geom_point() + 
-  scale_y_continuous(breaks = seq(from=0, to=100, by = 5.0))
+  #scale_y_continuous(breaks = seq(from=0, to=100, by = 5.0)) + 
+  labs(title = 'Relative Percent of Storage Used at SMP 63761',
+       subtitle = 'All Rain Events from 10/17/2023 - 2/28/2025') + 
+  xlab('Rain Event Depth (in)') + 
+  ylim(0, 50) + 
+  ylab('% Storage Used') 
+
+ggsave(paste0("63761/output/rpsu_vs_depth_", eval_start, ".png"))
 
 # Calculate median RPSU for storms over 1.5"
 smp_metrics_big_storms <- filter(smp_metrics, eventdepth_in > 1.5)
