@@ -25,7 +25,7 @@ rain <- read_xlsx("data/1140-3-2/OW1/1140-3-2_OW1_25Q1_15min_QAQC_20250710_KR.xl
 
 ow1_level_2 <- read_xlsx("data/1140-3-2/OW1/1140-3-2_OW1_25Q2_15min_QAQC_20250710_KR.xlsx",
              sheet = "Final_Import_Site#")
-ow1_level_2_corrected <- ow1_level |>
+ow1_level_2_corrected <- ow1_level_2 |>
   mutate(dtime = `Standard Dtime` + lubridate::seconds(1),
          dtime = floor_date(dtime, "minute")) |>
   select(dtime,  `Corrected Water Depth (ft)`) |>
@@ -69,12 +69,20 @@ ow1_comb <- rbind(ow_lvlr, ow_lvlr2)
 ```{r}
 ggplot(ow1_comb, aes(x = dtime, y = cwlevel)) +
   #geom_col(aes(x = dtime, y = rainfall), color = "navy") +
-  geom_line(aes(y = cwlevel, )) +
-  geom_hline(aes(yintercept = 1.08), color = "red") +
+  geom_line(aes(linetype = "Water Level"), color = "cornflowerblue", linewidth = 1.2) +
+  geom_hline(aes(yintercept = 1.08), color = "red", linewidth = 0.6) +
   geom_hline(yintercept = 5.83, linetype = "dashed") +
   geom_hline(yintercept = 0, linetype = "dashed") +
   coord_cartesian(ylim = c(0, 6)) + 
-  geom_vline(xintercept = ymd_hms("2025-05-16 12:00:00"))
+  geom_vline(xintercept = ymd_hms("2025-05-16 12:00:00"), linetype = 2, color = "orange", linewidth = 0.5) +
+  geom_vline(xintercept = ymd_hms("2025-05-30 12:00:00"), linetype = 2, color = "orange", linewidth = .5) +
+  labs(
+    title = "1440-3-1 OW1 Water Level Plot",
+    y = "Date",
+    x = "Water level (ft)",
+    linetype = NULL
+  )  +
+  theme(legend.position = "bottom")
   
  # scale_y_continuous(sec.axis = sec_axis(~ (.-2)/5, name = "Rainfall (in)"), expand = c(0, 0)) #+ 
  # coord_cartesian(ylim = c(2, 3.75))
