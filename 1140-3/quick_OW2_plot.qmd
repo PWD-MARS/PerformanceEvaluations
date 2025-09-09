@@ -65,7 +65,7 @@ ow2_lvlr <- ow2_level_corrected |>
 
 ow2_lvlr2 <- ow2_level_2_corrected |>
   mutate(cwlevel = (cwlevel + 1.08)) |>
-  #left_join(rain2, join_by(dtime == dtime)) |>
+  left_join(rain2, join_by(dtime == dtime)) |>
   na.omit()
 
 ow2_comb <- rbind(ow2_lvlr, ow2_lvlr2)
