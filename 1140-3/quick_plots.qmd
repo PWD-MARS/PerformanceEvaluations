@@ -68,21 +68,30 @@ ow1_comb <- rbind(ow_lvlr, ow_lvlr2)
 
 ```{r}
 ggplot(ow1_comb, aes(x = dtime, y = cwlevel)) +
+  #scale_x_date(date_breaks = "1 month", data_labels = "%D") +
   #geom_col(aes(x = dtime, y = rainfall), color = "navy") +
-  geom_line(aes(linetype = "Water Level"), color = "cornflowerblue", linewidth = 1.2) +
-  geom_hline(aes(yintercept = 1.08), color = "red", linewidth = 0.6) +
+  geom_line(aes(color = "Water Level"), linewidth = 1.2) +
+  geom_hline(aes(yintercept = 1.08, color = "Bottom of Crate"), linewidth = 0.6 ) +
   geom_hline(yintercept = 5.83, linetype = "dashed") +
+  annotate("text", x =  ymd_hms("2025-02-27 00:00:00"),  y = .20, label = "Bottom of pipe bedding", hjust = 0) +
   geom_hline(yintercept = 0, linetype = "dashed") +
+    annotate("text", x =  ymd_hms("2025-02-27 00:00:00"),  y = 5.63, label = "Top of Storage", hjust = 0) +
   coord_cartesian(ylim = c(0, 6)) + 
-  geom_vline(xintercept = ymd_hms("2025-05-16 12:00:00"), linetype = 2, color = "orange", linewidth = 0.5) +
-  geom_vline(xintercept = ymd_hms("2025-05-30 12:00:00"), linetype = 2, color = "orange", linewidth = .5) +
+  geom_vline(aes(xintercept = ymd_hms("2025-05-16 12:00:00"), color = "Maintenance Event"), linetype = 2, linewidth = 0.5) +
+  annotate("text", x =  ymd_hms("2025-05-05 12:00:00"),  y = 2, label = "Orifice Drilled", hjust = 0) +
+  geom_vline(aes(xintercept = ymd_hms("2025-05-30 12:00:00"), color = "Maintenance Event"), linetype = 2, linewidth = .5) +
+  annotate("text", x =  ymd_hms("2025-06-01 00:00:00"),  y = 2, label = "Jetting", hjust = 0) +
   labs(
     title = "1440-3-1 OW1 Water Level Plot",
-    y = "Date",
-    x = "Water level (ft)",
-    linetype = NULL
+    x = "Date",
+    y = "Water level (ft)",
+    color = NULL
   )  +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom") +
+   scale_color_manual(values = c(
+    "Bottom of Crate" = "red",
+    "Water Level" = "cornflowerblue",
+    "Maintenance Event" = "orange"))
   
  # scale_y_continuous(sec.axis = sec_axis(~ (.-2)/5, name = "Rainfall (in)"), expand = c(0, 0)) #+ 
  # coord_cartesian(ylim = c(2, 3.75))
