@@ -1,0 +1,121 @@
+---
+title: "quick_plots"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+```
+
+## Import QAQC
+
+```{r}
+ow2_level <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q1_15min_QAQC_20250710_KR.xlsx",
+             sheet = "Final_Import_Site#")
+
+ow2_level_corrected <- ow2_level |>
+  mutate(dtime = `Standard Dtime` + lubridate::seconds(1),
+         dtime = floor_date(dtime, "minute")) |>
+  select(dtime,  `Corrected Water Depth (ft)`) |>
+  rename(cwlevel = `Corrected Water Depth (ft)`)
+
+rain <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q1_15min_QAQC_20250710_KR.xlsx",
+             sheet = "Rainfall Data")
+
+ow2_level_2 <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q2_15min_QAQC_20250710_KR.xlsx",
+             sheet = "Final_Import_Site#")
+ow2_level_2_corrected <- ow2_level_2 |>
+  mutate(dtime = `Standard Dtime` + lubridate::seconds(1),
+         dtime = floor_date(dtime, "minute")) |>
+  select(dtime,  `Corrected Water Depth (ft)`) |>
+  rename(cwlevel = `Corrected Water Depth (ft)`)
+
+rain <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q1_15min_QAQC_20250710_KR.xlsx",
+             sheet = "Rainfall Data")
+
+rain2 <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q2_15min_QAQC_20250710_KR.xlsx",
+             sheet = "Rainfall Data")
+
+rain <- 
+  rain |> 
+  rename(dtime = `DateTime`,
+         rainfall = `Rainfall (in.)`,
+         gauge_uid = `Rain Gauge #`,
+         rain_event_uid = `Rainfall Event ID`)
+
+rain2 <- 
+  rain2 |> 
+  rename(dtime = `DateTime`,
+         rainfall = `Rainfall (in.)`,
+         gauge_uid = `Rain Gauge #`,
+         rain_event_uid = `Rainfall Event ID`)
+
+total_rain <- rbind(rain, rain2)
+
+
+```
+
+```{r}
+ow2_lvlr <- ow2_level_corrected |>
+  mutate(cwlevel = (cwlevel + 1.08)) |>
+ left_join(rain, join_by(dtime == dtime)) |>
+  na.omit()
+
+ow2_lvlr2 <- ow2_level_2_corrected |>
+  mutate(cwlevel = (cwlevel + 1.08)) |>
+  #left_join(rain2, join_by(dtime == dtime)) |>
+  na.omit()
+
+ow2_comb <- rbind(ow2_lvlr, ow2_lvlr2)
+```
+
+```{r}
+OW2_level <- ggplot(ow2_comb, aes(x = dtime, y = cwlevel)) +
+  #scale_x_date(date_breaks = "1 month", data_labels = "%D") +
+  #geom_col(aes(x = dtime, y = rainfall), color = "navy") +
+  geom_line(aes(color = "Water Level"), linewidth = 1.2) +
+  geom_hline(aes(yintercept = 1.08, color = "Bottom of Crate"), linewidth = 0.6 ) +
+  geom_hline(yintercept = 5.83, linetype = "dashed") +
+  annotate("text", x =  ymd_hms("2025-02-27 00:00:00"),  y = .20, label = "Bottom of pipe bedding", hjust = 0) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+    annotate("text", x =  ymd_hms("2025-02-27 00:00:00"),  y = 5.63, label = "Top of Storage", hjust = 0) +
+  coord_cartesian(ylim = c(0, 6)) + 
+  geom_vline(aes(xintercept = ymd_hms("2025-05-16 12:00:00"), color = "Maintenance Event"), linetype = 2, linewidth = 0.5) +
+  annotate("text", x =  ymd_hms("2025-05-07 00:00:00"),  y = 2, label = "Orifice Drilled", hjust = 0) +
+  geom_vline(aes(xintercept = ymd_hms("2025-05-30 12:00:00"), color = "Maintenance Event"), linetype = 2, linewidth = .5) +
+  annotate("text", x =  ymd_hms("2025-06-01 00:00:00"),  y = 2, label = "Jetting", hjust = 0) +
+  labs(
+    x = "Date",
+    y = "Water level (ft)",
+    color = NULL
+  )  +
+  theme(legend.position = "bottom") +
+   scale_color_manual(values = c(
+    "Bottom of Crate" = "red",
+    "Water Level" = "cornflowerblue",
+    "Maintenance Event" = "orange")) +
+  scale_y_continuous(labels = function(x) sprintf("%.2f", x))
+  
+
+rainfall <- ggplot(ow2_comb, aes(y = rainfall)) +
+  geom_col(aes(dtime)) + 
+  scale_y_continuous(lim = c(0, 1)) +
+  labs(
+    x = NULL,
+    y = "Rainfall (in)",
+    title = "1140-3-2 OW2 Water Level Response to Rain Events"
+  )
+  
+```
+
+![](http://127.0.0.1:30617/chunk_output/FA4C6EBE3bf1d8a2/681DD887/cu5eu7s9abes6/000130.png)
+
+```{r}
+cowplot::plot_grid(rainfall, OW2_level,
+                   nrow = 2,
+                   rel_heights = c(1,3),
+                   rel_widths = c(1,1) 
+                   )
+```
