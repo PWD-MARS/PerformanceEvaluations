@@ -1,10 +1,11 @@
 ---
-title: "quick_plots"
+title: "quick_SW1_plot"
 format: html
 editor: visual
 ---
 
 ```{r}
+#| include: false
 library(tidyverse)
 library(readxl)
 ```
@@ -12,30 +13,30 @@ library(readxl)
 ## Import QAQC
 
 ```{r}
-ow2_level <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q1_15min_QAQC_20250710_KR.xlsx",
+sw1_level <- read_xlsx("data/1140-3-1/1140-3-1_SW1_25Q1_15min_QAQC_20250710_KR.xlsx",
              sheet = "Final_Import_Site#")
 
-ow2_level_corrected <- ow2_level |>
+sw1_level_corrected <- sw1_level |>
   mutate(dtime = `Standard Dtime` + lubridate::seconds(1),
          dtime = floor_date(dtime, "minute")) |>
   select(dtime,  `Corrected Water Depth (ft)`) |>
   rename(cwlevel = `Corrected Water Depth (ft)`)
 
-rain <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q1_15min_QAQC_20250710_KR.xlsx",
+rain <- read_xlsx("data/1140-3-1/1140-3-1_SW1_25Q1_15min_QAQC_20250710_KR.xlsx",
              sheet = "Rainfall Data")
 
-ow2_level_2 <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q2_15min_QAQC_20250710_KR.xlsx",
+sw1_level_2 <- read_xlsx("data/1140-3-1/1140-3-1_SW1_25Q2_15min_QAQC_20250710_KR.xlsx",
              sheet = "Final_Import_Site#")
-ow2_level_2_corrected <- ow2_level_2 |>
+sw1_level_2_corrected <- sw1_level_2 |>
   mutate(dtime = `Standard Dtime` + lubridate::seconds(1),
          dtime = floor_date(dtime, "minute")) |>
   select(dtime,  `Corrected Water Depth (ft)`) |>
   rename(cwlevel = `Corrected Water Depth (ft)`)
 
-rain <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q1_15min_QAQC_20250710_KR.xlsx",
+rain <- read_xlsx("data/1140-3-1/1140-3-1_SW1_25Q1_15min_QAQC_20250710_KR.xlsx",
              sheet = "Rainfall Data")
 
-rain2 <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q2_15min_QAQC_20250710_KR.xlsx",
+rain2 <- read_xlsx("data/1140-3-1/1140-3-1_SW1_25Q2_15min_QAQC_20250710_KR.xlsx",
              sheet = "Rainfall Data")
 
 rain <- 
@@ -58,21 +59,23 @@ total_rain <- rbind(rain, rain2)
 ```
 
 ```{r}
-ow2_lvlr <- ow2_level_corrected |>
+sw1_lvlr <- sw1_level_corrected |>
   mutate(cwlevel = (cwlevel + 1.08)) |>
- left_join(rain, join_by(dtime == dtime)) |>
-  na.omit()
+ left_join(rain, join_by(dtime == dtime)) 
 
-ow2_lvlr2 <- ow2_level_2_corrected |>
+sw1_lvlr2 <- sw1_level_2_corrected |>
   mutate(cwlevel = (cwlevel + 1.08)) |>
-  left_join(rain2, join_by(dtime == dtime)) |>
-  na.omit()
+  left_join(rain2, join_by(dtime == dtime)) 
 
-ow2_comb <- rbind(ow2_lvlr, ow2_lvlr2)
+sw1_comb <- rbind(sw1_lvlr, sw1_lvlr2)
+
+sw1_comb <- 
+  sw1_comb |>
+  mutate(rainfall = if_else(is.na(rainfall), 0, rainfall))
 ```
 
 ```{r}
-OW2_level <- ggplot(ow2_comb, aes(x = dtime, y = cwlevel)) +
+SW1_level <- ggplot(sw1_comb, aes(x = dtime, y = cwlevel)) +
   #scale_x_date(date_breaks = "1 month", data_labels = "%D") +
   #geom_col(aes(x = dtime, y = rainfall), color = "navy") +
   geom_line(aes(color = "Water Level"), linewidth = 1.2) +
@@ -99,21 +102,32 @@ OW2_level <- ggplot(ow2_comb, aes(x = dtime, y = cwlevel)) +
   scale_y_continuous(labels = function(x) sprintf("%.2f", x))
   
 
-rainfall <- ggplot(ow2_comb, aes(y = rainfall)) +
+rainfall <- ggplot(sw1_comb, aes(y = rainfall)) +
   geom_col(aes(dtime)) + 
-  scale_y_continuous(lim = c(0, 1)) +
+#  scale_y_continuous(lim = c(0, 1)) +
   labs(
     x = NULL,
     y = "Rainfall (in)",
-    title = "1140-3-2 OW2 Water Level Response to Rain Events"
+    title = "1140-3-1 SW1 Water Level Response to Rain Events"
   )
   
 ```
 
 ```{r}
-cowplot::plot_grid(rainfall, OW2_level,
+cowplot::plot_grid(rainfall, SW1_level,
                    nrow = 2,
                    rel_heights = c(1,3),
                    rel_widths = c(1,1) 
                    )
+```
+
+```{r}
+ggplot(rain_event, aes(y = rainfall)) +
+  geom_col(aes(dtime)) + 
+ # scale_y_continuous(lim = c(0, 1)) +
+  labs(
+    x = NULL,
+    y = "Rainfall (in)",
+    title = "1140-3-1 SW1 Water Level Response to Rain Events"
+  )
 ```
