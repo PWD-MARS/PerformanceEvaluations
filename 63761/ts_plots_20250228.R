@@ -34,7 +34,8 @@ plot_ts <-
            key_elevs,
            key_elev_descrips,
            key_dates,
-           key_date_descrips) {
+           key_date_descrips,
+           color = "black") {
     
     # Import monitoring data and create dtime_est col
     smp_monitor_data <- marsFetchLevelData(
@@ -54,15 +55,15 @@ plot_ts <-
     
     ts <-
       ggplot(smp_monitor_data, aes(x = dtime_est, y = level_ft - ref_depth)) +
-      geom_line(color = "black") +
+      geom_line(color = color) +
       ggtitle(paste0(smp_id, " ", ow_suffix, " Response Plot")) +
       ylab("Water Level (ft)") +
       xlab("Date") +
-      scale_y_continuous(breaks = scales::breaks_width(2))
+      scale_y_continuous(breaks = scales::breaks_width(1))
     scale_x_datetime(
       date_breaks = "6 months",
       minor_breaks = "3 months",
-      date_labels = "%D"
+      date_labels = "%F"
     )
     
     # Add horizontal lines for key depths
@@ -71,15 +72,15 @@ plot_ts <-
         ts <-
           ts + geom_hline(
             yintercept = key_depths[i],
-            color = "orange",
-            size = 0.8,
+            color = "black",
+            size = 0.4,
             linetype = "dashed"
-          ) +
-        annotate("text",
-                 x = min(smp_monitor_data$dtime_est)-months(2),
-                 y = key_depths[i] + 0.2,
-                 label = key_elev_descrips[i],
-                 hjust = 0)
+          ) #+
+        # annotate("text",
+        #          x = min(smp_monitor_data$dtime_est)-months(2),
+        #          y = key_depths[i] + 0.2,
+        #          label = key_elev_descrips[i],
+        #          hjust = 0)
       }
     }
     
@@ -109,23 +110,24 @@ plot_ts <-
 # Arguments that are the same for all calls to plot_ts
 smp_id <- '63761'
 sys_invert_elev <- 111.5
-eval_start <- '2023-10-17'
-eval_end <- '2025-02-28'
+eval_start <- '2023-10-19'
+eval_end <- '2025-02-27'
 key_dates <- c() %>% lubridate::as_datetime()
 key_date_descrips <- c()
 
 # CS1
 cs1_suffix <- 'CS1'
-cs1_elevs <- c(109.0, 111.9, 
-               112.8, 114.5, 117.4, 118.7)
+cs1_elevs <- c(111.5, 111.9, 112.0,
+               112.8, 114.5, 117.0, 117.4)
 cs1_elev_descrips <-
   c(
-    "bottom of CS1",
+    "bottom of stone",
     '1" orifice invert',
+    'Distributin pipe invert',
     '2" orifice invert',
     "weir notch elevation",
-    "top of CS1 weir",
-    "CS1 rim"
+    "top of stone",
+    "top of CS1 weir"
   )
 cs1_invert_elev <- 109.0
 cs1_plot <-
@@ -139,16 +141,46 @@ cs1_plot <-
     cs1_elevs,
     cs1_elev_descrips,
     key_dates,
-    key_date_descrips
+    key_date_descrips,
+    "darkorange2"
   )
 ggsave(paste0("63761/output/cs1_ts_", eval_end, ".png"))
 
+#CS1 zoomed plot - shows only bot of stone to weir notch
+cs1_zoomed_elevs <- c(111.5, 111.9, 112.0,
+               112.8, 114.5)
+cs1_zoomed_elev_descrips <-
+  c(
+    "bottom of stone",
+    '1" orifice invert',
+    'Distributin pipe invert',
+    '2" orifice invert',
+    "weir notch elevation"
+  )
+cs1_plot <-
+  plot_ts(
+    smp_id,
+    cs1_suffix,
+    eval_start,
+    eval_end,
+    sys_invert_elev,
+    cs1_invert_elev,
+    cs1_zoomed_elevs,
+    cs1_zoomed_elev_descrips,
+    key_dates,
+    key_date_descrips,
+    "darkorange2"
+  )
+ggsave(paste0("63761/output/cs1_ts_", eval_end, "_zoomed.png"))
 
 # OW1
 ow1_suffix <- "OW1"
-ow1_elevs <- c(111.5, 111.98, 117.0, 119.4)
+ow1_elevs <- c(111.5, 111.7, 117.0)
+# Note: Bot. of OW1 calculated as 111.98 based on surveyed rim elevation and
+# measured well depth. Changed to 111.7 ft to force CS1 and OW1 water depths to
+# match.
 ow1_elev_descrips <- c('bottom of stone', 'bottom of OW1', 
-                       'top of stone', 'top of OW1')
+                       'top of stone')
 ow1_invert_elev <- 111.98
 ow1_plot <-
   plot_ts(
@@ -161,7 +193,8 @@ ow1_plot <-
     ow1_elevs,
     ow1_elev_descrips,
     key_dates,
-    key_date_descrips
+    key_date_descrips,
+    "dodgerblue"
   )
 ggsave(paste0("63761/output/ow1_ts_", eval_end, ".png"))
 

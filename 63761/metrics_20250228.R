@@ -28,11 +28,14 @@ mars_con <- dbPool(
 smp_id <- '63761'
 ow_suffix <- 'OW1'
 cs_suffix <- 'CS1'
-eval_start <- '2023-10-17'
-eval_end <- '2025-02-28'
+eval_start <- '2023-10-19'
+eval_end <- '2025-02-27'
 ow_storage_depth_ft <- 5.5 # Top of stone relative to bottom of stone
 cs_storage_depth_ft <- 5.9 # Weir depth relative to bottom of stone
-ow_sump_depth <- -0.48 # Bottom of stone relative to bottom of OW
+ow_sump_depth <- -0.2 # Bottom of stone relative to bottom of OW
+# Note: OW sump depth calculated as -0.48 based on surveyed rim elevation,
+# bottom of stone elevation, and measured well depth. Changed to -0.2 ft to
+# force CS1 and OW1 water depths to match.
 cs_sump_depth <- 2.5 # Bottom of stone relative to bottom of CS
 
 # Import OW data
@@ -41,7 +44,7 @@ ow_monitor_data <- marsFetchLevelData(mars_con,
                                        ow_suffix = ow_suffix,
                                        start_date = eval_start,
                                        end_date = eval_end,
-                                       sump_correct = FALSE) %>% ##Revisit the sump issue
+                                       sump_correct = FALSE) %>%
   mutate(dtime_est = with_tz(dtime, tzone = "EST"),
          owlevel_ft = level_ft - ow_sump_depth)
 
@@ -51,7 +54,7 @@ cs_monitor_data <- marsFetchLevelData(mars_con,
                                       ow_suffix = cs_suffix,
                                       start_date = eval_start,
                                       end_date = eval_end,
-                                      sump_correct = FALSE) %>% ##Revisit the sump issue
+                                      sump_correct = FALSE) %>%
   mutate(dtime_est = with_tz(dtime, tzone = "EST"),
          cslevel_ft = level_ft - cs_sump_depth)
 
@@ -73,7 +76,8 @@ smp_metrics <- marsFetchRainEventData(mars_con,
   mutate(eventdatastart_est = with_tz(eventdatastart, tzone = "EST"), 
          eventdataend_est = with_tz(eventdataend, tzone = "EST"), 
          # Create empty cols for metrics
-         peak_level_ft_ow = NA, peak_level_ft_cs = NA, overtop = NA, rpsu = NA) %>%
+         peak_level_ft_ow = NA, peak_level_ft_cs = NA, overtop = NA, rpsu = NA,
+         period = ifelse(eventdatastart_est < "2024-10-01 00:00:00 EST", "Before 2024-10-01", "On or After 2024-10-01")) %>%
   # Remove unnecessary cols
   select(-gage_uid, -eventdatastart, -eventdataend)
 
@@ -95,7 +99,7 @@ poolClose(mars_con)
 write_csv(x = smp_metrics,
           paste0("63761/output/metrics_", eval_end, ".csv"))
 
-# Plot event depth vs. rpsu  
+# Plot event depth vs. rpsu 
 ggplot(data = smp_metrics, mapping = aes(x = eventdepth_in, y = rpsu)) + 
   geom_point() + 
   #scale_y_continuous(breaks = seq(from=0, to=100, by = 5.0)) + 
@@ -104,8 +108,20 @@ ggplot(data = smp_metrics, mapping = aes(x = eventdepth_in, y = rpsu)) +
   xlab('Rain Event Depth (in)') + 
   ylim(0, 50) + 
   ylab('% Storage Used') 
+ggsave(paste0("63761/output/rpsu_vs_depth_", eval_end, ".png"))
 
-ggsave(paste0("63761/output/rpsu_vs_depth_", eval_start, ".png"))
+# Recreate plot of event depth vs. rpsu, including color coding for dates before
+# and after 10/1/24
+ggplot(data = smp_metrics, mapping = aes(x = eventdepth_in, y = rpsu, color = period)) + 
+  geom_point() + 
+  #scale_y_continuous(breaks = seq(from=0, to=100, by = 5.0)) + 
+  labs(title = 'Relative Percent of Storage Used at SMP 63761',
+       subtitle = 'All Rain Events from 10/17/2023 - 2/28/2025') + 
+  xlab('Rain Event Depth (in)') + 
+  ylim(0, 50) + 
+  ylab('% Storage Used') + 
+  labs(color = "Period")
+ggsave(paste0("63761/output/rpsu_vs_depth_with_period_", eval_end, ".png"))
 
 # Calculate median RPSU for storms over 1.5"
 smp_metrics_big_storms <- filter(smp_metrics, eventdepth_in > 1.5)
