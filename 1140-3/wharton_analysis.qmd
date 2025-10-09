@@ -1,0 +1,123 @@
+---
+title: "Wharton Square Analysis"
+format: html
+---
+
+```{r}
+#|include: false
+library(dplyr)
+library(lubridate)
+library(readr)
+```
+
+```{r}
+# Read HOBO sensor csv file
+read_sensor<- function(file, 
+                      skip = 2, 
+                      col_names = c("id", "datetime", "psi", "temp"),
+                      col_select = 1:4,
+                      ...) {
+  df <- readr::read_csv(file, 
+                 skip = skip,
+                 col_names = col_names,
+                 col_select = col_select) |>
+  stats::na.omit()
+}
+
+# Well correction factor
+well_cf <- function(cap2hook, hook2sensor, well_depth) {
+  correction_factor = well_depth/12 - hook2sensor/12 - cap2hook/12
+}
+
+# Clean senor dates
+clean_sensor_dates <- function(df, datetime = "datetime") {
+  cleaned <- df |>
+    dplyr::mutate(dtime = lubridate::parse_date_time(datetime, 
+                                      "%m/%d/%y %I:%M:%S %p",
+                                      tz = "EST")) |>
+    select(dtime, psi, temp)
+}
+
+# Rounder - Round for calculating water density
+rounder <- function(x, accuracy, round_func) {
+  round_func(x / accuracy) * accuracy
+}
+
+read_baro <- function(x) {
+  baro <- read_csv(x) |> dplyr::select(dtime, baro_psi)
+}
+
+read_rain <- function(file, type = "gage") {
+  rain <- read_csv(file)
+  
+  if (type == "gage") {
+    rain <- 
+      rain |>
+      select(dtime, rainfall_in, gage_uid, gage_event_uid)
+  }
+}
+```
+
+```{r}
+#| include: false
+# Load data
+smp1_sw1 <- read_sensor("data/1140-3-1_SW1_LVL_10744837.csv")
+smp2_ow1 <- read_sensor("data/1140-3-2_OW1_LVL_10217755.csv")
+smp2_ow2 <- read_sensor("data/1140-3-2_OW2_LVL_10719655.csv")
+baro <- read_baro("data/1140-3-1_2025-01-01_to_2025-07-31_baro.csv")
+rain <- read_rain("data/1140-3-1_2025-01-01_to_2025-07-31_rainfall.csv")
+
+specific_weights <- read_csv("data/spec_weight.csv")
+```
+
+```{r}
+specific_weights <- specific_weights |>
+  # Round down to the nearest 10th degree
+  mutate(floor_temp = rounder(temp, 1, floor)) |>
+  group_by(floor_temp) |>
+  # Average temp for a given floor temp
+  summarize(pressure = mean(p))
+```
+
+```{r}
+# Apply correct datetime
+smp1_sw1 <- clean_sensor_dates(smp1_sw1)
+smp2_ow1 <- clean_sensor_dates(smp2_ow1)
+smp2_ow2 <- clean_sensor_dates(smp2_ow2)
+baro <- baro |> mutate(dtime = lubridate::force_tz(dtime, "EST"))
+rain <- rain |> mutate(dtime = lubridate::force_tz(dtime, "EST"))
+```
+
+```{r}
+
+ow1_plans <- tibble::tribble(
+  ~obj, ~elevation,
+  "correction_factor",  0.1042,
+  "sump_depth", 0.15,
+  "bottom_stone", 21.70,
+  "bottom_crate", 22.78,
+  "storage_depth", 3.17
+)
+
+ow2_plans <- tibble::tribble(
+    ~obj, ~elevation,
+  "correction_factor",  0.1452,
+  "bottom_stone", 21.70,
+  "bottom_crate", 22.78,
+  "storage_depth", 3.17
+)
+# SMP site metrics for 1140-3-1 SW1
+# Correction factor(ft)
+sw1_cf <- 0.15
+
+```
+
+```{r}
+smp2_ow1_level <- smp2_ow1 |>
+  mutate(temp = round(temp)) |>
+  left_join(baro, join_by(dtime == dtime)) |>
+  left_join(specific_weights, join_by(temp == floor_temp)) |>
+  mutate(hp = (psi - baro_psi)*144,
+         water_lvl = hp/pressure + ow1_plans[ow1_plans$obj == "correction_factor", ]$elevation)  |>
+  filter(!is.na(water_lvl))
+```

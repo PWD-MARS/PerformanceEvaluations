@@ -31,9 +31,9 @@ key_elevs <-
   c(109.0,
     111.5,
     111.9,
-    111.98,
+    111.7,
     112.0,
-    112.9,
+    112.8,
     114.5,
     117.0,
     117.4)
@@ -49,6 +49,10 @@ key_elev_descrips <-
     "top of stone",
     "top of CS1 weir"
   )
+
+# Note: Bot. of OW1 calculated as 111.98 based on surveyed rim elevation and
+# measured well depth. Changed to 111.7 ft to force CS1 and OW1 water depths to
+# match.
 
 sys_invert_elev <- 111.5
 key_depths <- key_elevs - sys_invert_elev
@@ -126,8 +130,9 @@ for(i in 1:length(event_data$gage_event_uid)) {
     labs(title = paste0('Water Level Response'), 
          subtitle = paste0('Max Response = ', 
                            round(event_data$peak_level_ft_ow[i], digits = 2), 
-                           ' ft ,  Peak Intensity = ', 
+                           ' ft, ', 
                            round(event_data$rpsu[i], digits = 1), "% of storage used")) + 
+    scale_color_manual(labels = c("CS1", "OW1"), values = c("darkorange2", "dodgerblue")) + 
     scale_y_continuous(
       breaks = scales::breaks_width(1),
       labels = scales::number_format(accuracy = 0.1)
@@ -135,22 +140,22 @@ for(i in 1:length(event_data$gage_event_uid)) {
     scale_x_datetime(date_breaks = "12 hours", minor_breaks = "6 hours") +
     labs(color = "Location")
   if (length(key_depths) > 0 & length(key_elev_descrips) > 0) {
-    for(j in c(2, 3, 5, 7)){
+    for(j in c(2, 3, 5, 7, 8)){
       wl_ts <-
         wl_ts + geom_hline(
           yintercept = key_depths[j],
           color = "black",
-          size = 0.6,
+          size = 0.4,
           linetype = "dashed"
-        ) +
-        annotate(
-          "text",
-          size = unit(2.6, 'pt'),
-          x = event_data$eventdataend_est[i] + days(1),
-          y = key_depths[j] + 0.05,
-          label = key_elev_descrips[j],
-          hjust = 1
-        )
+         ) # +
+        # annotate(
+        #   "text",
+        #   size = unit(2.6, 'pt'),
+        #   x = event_data$eventdataend_est[i] + days(1),
+        #   y = key_depths[j] + 0.05,
+        #   label = key_elev_descrips[j],
+        #   hjust = 1
+        # )
     }
   }
   # Create rainfall plot
