@@ -1,0 +1,181 @@
+---
+title: "quick_plots"
+format: html
+editor: visual
+---
+
+```{r}
+#| include: false
+library(tidyverse)
+library(readxl)
+```
+
+## Import QAQC
+
+```{r}
+# Read Q2 QAQC file
+ow2_level_q2 <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q2_15min_QAQC_20250710_KR.xlsx",
+             sheet = "Final_Import_Site#")
+# Correct df
+ow2_level_q2_corrected <- ow2_level_q2 |>
+  # Datetime correction when converting from decimal
+  mutate(dtime = `Standard Dtime` + lubridate::seconds(1),
+         dtime = floor_date(dtime, "minute")) |>
+  select(dtime,  `Corrected Water Depth (ft)`) |>
+  rename(cwlevel = `Corrected Water Depth (ft)`)
+
+# Read Q2 QAQC file
+ow1_level_q2 <- read_xlsx("data/1140-3-2/OW1/1140-3-2_OW1_25Q2_15min_QAQC_20250710_KR.xlsx",
+             sheet = "Final_Import_Site#")
+# Correct df
+ow1_level_q2_corrected <- ow1_level_q2 |>
+  # Datetime correction when converting from decimal
+  mutate(dtime = `Standard Dtime` + lubridate::seconds(1),
+         dtime = floor_date(dtime, "minute")) |>
+  select(dtime,  `Corrected Water Depth (ft)`) |>
+  rename(cwlevel = `Corrected Water Depth (ft)`)
+
+# Rain data from excel
+rain <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q2_15min_QAQC_20250710_KR.xlsx",
+             sheet = "Rainfall Data")
+
+rain <- 
+  rain |> 
+  rename(dtime = `DateTime`,
+         rainfall = `Rainfall (in.)`,
+         gauge_uid = `Rain Gauge #`,
+         rain_event_uid = `Rainfall Event ID`) 
+
+```
+
+```{r}
+# Adjust for distnace between bedding and crate
+ow1_level_q2_corrected <- ow1_level_q2_corrected |>
+  mutate(ow1_cwlevel = cwlevel + 1.08) |> select(-cwlevel)
+
+ow2_level_q2_corrected <- ow2_level_q2_corrected |>
+  mutate(ow2_cwlevel = cwlevel+1.08) |> select(-cwlevel)
+
+ow_comb <- ow1_level_q2_corrected |>
+  # Combine with ow2
+  left_join(ow2_level_q2_corrected, join_by(dtime == dtime)) |>
+  # Comvibine with rain data
+  left_join(rain, join_by(dtime == dtime)) |>
+  mutate(rainfall = if_else(is.na(rainfall), 0, rainfall))
+```
+
+```{r}
+# OW2 plot before maintenance
+ow_preevent <- ggplot(ow_comb |> 
+                      dplyr::filter(
+                        between(dtime, 
+                                ymd_hms("2025-04-26 6:00:00"),
+                                ymd_hms("2025-04-29 6:00:00")
+                                )),
+                      aes(x = dtime)) +
+  #scale_x_date(date_breaks = "1 month", data_labels = "%D") +
+  #geom_col(aes(x = dtime, y = rainfall), color = "navy") +
+  geom_line(aes(y = ow1_cwlevel, color = "OW1 Water Level"), linewidth = 1.1, linetype = "dashed") +
+  geom_line(aes(color = "OW2 Water Level", y = ow2_cwlevel), linewidth = 1.1, linetype = "dashed") +
+  geom_hline(aes(yintercept = 1.08, color = "Bottom of Crate"), linewidth = 0.6 )  +
+  geom_hline(aes(yintercept = 1.08, color = "Bottom of Crate"), linewidth = 0.6 ) +
+  annotate("text", x =  ymd_hms("2025-04-26 06:00:00"),  y = .20, label = "Bottom of pipe bedding", hjust = 0) +
+  geom_hline(yintercept = 4.0, linetype = "dashed") +
+    annotate("text", x =  ymd_hms("2025-04-26 06:00:00"),  y = 3.80, label = "Top of Storage (OW2)", hjust = 0) +
+    geom_hline(yintercept = 4.25, linetype = "dashed") +
+    annotate("text", x =  ymd_hms("2025-04-26 06:00:00"),  y = 4.50, label = "Top of Storage (OW1)", hjust = 0) +
+  coord_cartesian(ylim = c(0, 6)) +
+  labs(
+    x = "Date",
+    y = "Water level (ft)",
+    color = NULL
+  )  +
+  theme(legend.position = "bottom") +
+   scale_color_manual(values = c(
+    "Bottom of Crate" = "red",
+    "OW1 Water Level" = "cornflowerblue",
+    "OW2 Water Level" = "#2a3782")) +
+  scale_y_continuous(labels = function(x) sprintf("%.2f", x))
+  
+
+rainfall_pre <- ggplot(ow_comb |> 
+                      dplyr::filter(
+                        between(dtime, 
+                                ymd_hms("2025-04-26 06:00:00"),
+                                ymd_hms("2025-04-29 06:00:00")
+                                )),
+                   aes(y = rainfall)) +
+  geom_col(aes(dtime)) + 
+  scale_y_continuous(lim = c(0, 1)) +
+  labs(
+    x = NULL,
+    y = "Rainfall (in)",
+    title = "1140-3-2 Water Level Response Pre-Maintenance"
+  )
+  
+```
+
+```{r}
+cowplot::plot_grid(rainfall_pre, ow_preevent,
+                   nrow = 2,
+                   rel_heights = c(1,3),
+                   rel_widths = c(1,1)
+                   )
+```
+
+```{r}
+# OW2 plot after maintenance
+ow_postevent <- ggplot(ow_comb |> 
+                      dplyr::filter(
+                        between(dtime, 
+                                ymd_hms("2025-06-19 6:00:00"),
+                                ymd_hms("2025-06-20 6:00:00")
+                                )),
+                      aes(x = dtime)) +
+  #scale_x_date(date_breaks = "1 month", data_labels = "%D") +
+  #geom_col(aes(x = dtime, y = rainfall), color = "navy") +
+  geom_line(aes(y = ow1_cwlevel, color = "OW1 Water Level"), linewidth = 1.1, linetype = "dashed") +
+  geom_line(aes(color = "OW2 Water Level", y = ow2_cwlevel), linewidth = 1.1, linetype = "dashed") +
+  geom_hline(aes(yintercept = 1.08, color = "Bottom of Crate"), linewidth = 0.6 ) +
+  geom_hline(yintercept = 5.83, linetype = "dashed") +
+  annotate("text", x =  ymd_hms("2025-06-19 06:00:00"),  y = .20, label = "Bottom of pipe bedding", hjust = 0) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+    annotate("text", x =  ymd_hms("2025-06-19 06:00:00"),  y = 5.63, label = "Top of Storage", hjust = 0) +
+  coord_cartesian(ylim = c(0, 6)) +
+  labs(
+    x = "Date",
+    y = "Water level (ft)",
+    color = NULL
+  )  +
+  theme(legend.position = "bottom") +
+   scale_color_manual(values = c(
+    "Bottom of Crate" = "red",
+    "OW1 Water Level" = "cornflowerblue",
+    "OW2 Water Level" = "#2a3782")) +
+  scale_y_continuous(labels = function(x) sprintf("%.2f", x))
+  
+
+rainfall_post <- ggplot(ow_comb |> 
+                      dplyr::filter(
+                        between(dtime, 
+                                ymd_hms("2025-06-19 06:00:00"),
+                                ymd_hms("2025-06-20 06:00:00")
+                                )),
+                   aes(y = rainfall)) +
+  geom_col(aes(dtime)) + 
+  scale_y_continuous(lim = c(0, 1)) +
+  labs(
+    x = NULL,
+    y = "Rainfall (in)",
+    title = "1140-3-2 Water Level Response Post-Maintenance"
+  )
+  
+```
+
+```{r}
+cowplot::plot_grid(rainfall_post, ow_postevent,
+                   nrow = 2,
+                   rel_heights = c(1,3),
+                   rel_widths = c(1,1)
+                   )
+```
