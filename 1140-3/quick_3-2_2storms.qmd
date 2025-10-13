@@ -10,37 +10,54 @@ library(tidyverse)
 library(readxl)
 ```
 
+```{r}
+read_qaqc <- function(file_path) {
+  qaqc <- readxl::read_xlsx(file_path, sheet = "Final_Import_Site#") |>
+     # Datetime correction when converting from decimal
+  dplyr::mutate(dtime = `Standard Dtime` + lubridate::seconds(1),
+         dtime = lubridate::floor_date(dtime, "minute")) |>
+  dplyr::select(dtime,  `Corrected Water Depth (ft)`) |>
+  dplyr::rename(cwlevel = `Corrected Water Depth (ft)`)
+}
+# 
+# # Check that it matches
+# ow2_level_q1 <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q1_15min_QAQC_20250710_KR.xlsx",
+#              sheet = "Final_Import_Site#")
+# 
+# ow2_level_q1_corrected <- ow2_level_q1 |>
+#   # Datetime correction when converting from decimal
+#   mutate(dtime = `Standard Dtime` + lubridate::seconds(1),
+#          dtime = floor_date(dtime, "minute")) |>
+#   select(dtime,  `Corrected Water Depth (ft)`) |>
+#   rename(cwlevel = `Corrected Water Depth (ft)`)
+# 
+# ow2_level_q1_test <- read_qaqc("data/1140-3-2/OW2/1140-3-2_OW2_25Q1_15min_QAQC_20250710_KR.xlsx")
+# 
+# # Matches
+# dplyr::symdiff(ow2_level_q1_corrected, ow2_level_q1_test)
+```
+
 ## Import QAQC
 
 ```{r}
-# Read Q2 QAQC file
-ow2_level_q2 <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q2_15min_QAQC_20250710_KR.xlsx",
-             sheet = "Final_Import_Site#")
-# Correct df
-ow2_level_q2_corrected <- ow2_level_q2 |>
-  # Datetime correction when converting from decimal
-  mutate(dtime = `Standard Dtime` + lubridate::seconds(1),
-         dtime = floor_date(dtime, "minute")) |>
-  select(dtime,  `Corrected Water Depth (ft)`) |>
-  rename(cwlevel = `Corrected Water Depth (ft)`)
+# Read Q1 QAQC file
+ow2_level_q1_corrected <- read_qaqc("data/1140-3-2/OW2/1140-3-2_OW2_25Q1_15min_QAQC_20250710_KR.xlsx")
 
 # Read Q2 QAQC file
-ow1_level_q2 <- read_xlsx("data/1140-3-2/OW1/1140-3-2_OW1_25Q2_15min_QAQC_20250710_KR.xlsx",
-             sheet = "Final_Import_Site#")
-# Correct df
-ow1_level_q2_corrected <- ow1_level_q2 |>
-  # Datetime correction when converting from decimal
-  mutate(dtime = `Standard Dtime` + lubridate::seconds(1),
-         dtime = floor_date(dtime, "minute")) |>
-  select(dtime,  `Corrected Water Depth (ft)`) |>
-  rename(cwlevel = `Corrected Water Depth (ft)`)
+ow2_level_q2_corrected <- read_qaqc("data/1140-3-2/OW2/1140-3-2_OW2_25Q2_15min_QAQC_20250710_KR.xlsx")
+
+ow1_level_q1_corrected <- read_qaqc("data/1140-3-2/OW1/1140-3-2_OW1_25Q1_15min_QAQC_20250710_KR.xlsx")
+# Read Q2 QAQC file
+ow1_level_q2_corrected <- read_qaqc("data/1140-3-2/OW1/1140-3-2_OW1_25Q2_15min_QAQC_20250710_KR.xlsx")
 
 # Rain data from excel
-rain <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q2_15min_QAQC_20250710_KR.xlsx",
+rain_q1 <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q2_15min_QAQC_20250710_KR.xlsx",
              sheet = "Rainfall Data")
 
-rain <- 
-  rain |> 
+rain_q2 <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q2_15min_QAQC_20250710_KR.xlsx",
+             sheet = "Rainfall Data")
+
+rain <- rbind(rain_q1, rain_q2) |>
   rename(dtime = `DateTime`,
          rainfall = `Rainfall (in.)`,
          gauge_uid = `Rain Gauge #`,
@@ -53,12 +70,22 @@ rain <-
 ow1_level_q2_corrected <- ow1_level_q2_corrected |>
   mutate(ow1_cwlevel = cwlevel + 1.08) |> select(-cwlevel)
 
-ow2_level_q2_corrected <- ow2_level_q2_corrected |>
+ow1_level_q1_corrected <- ow1_level_q1_corrected |>
+  mutate(ow1_cwlevel = cwlevel + 1.08) |> select(-cwlevel)
+
+ow2_level_q1_corrected <- ow2_level_q1_corrected |>
   mutate(ow2_cwlevel = cwlevel+1.08) |> select(-cwlevel)
 
-ow_comb <- ow1_level_q2_corrected |>
+ow2_level_q2_corrected <- ow2_level_q2_corrected |>
+  mutate(ow2_cwlevel = cwlevel + 1.08) |> select(-cwlevel)
+
+ow1_comb <- rbind(ow1_level_q1_corrected, ow1_level_q2_corrected)
+
+ow2_comb <- rbind(ow2_level_q1_corrected, ow2_level_q2_corrected)
+
+ow_comb <- ow1_comb |>
   # Combine with ow2
-  left_join(ow2_level_q2_corrected, join_by(dtime == dtime)) |>
+  left_join(ow2_comb, join_by(dtime == dtime)) |>
   # Comvibine with rain data
   left_join(rain, join_by(dtime == dtime)) |>
   mutate(rainfall = if_else(is.na(rainfall), 0, rainfall))
