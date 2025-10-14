@@ -126,22 +126,20 @@ ow_preevent <- ggplot(ow_comb |>
   geom_ribbon(aes(ymin = 0, ymax = 4), fill = "lightblue", alpha = 0.4) +
   geom_ribbon(aes(ymin = 0, ymax = 4.25), fill = "lightblue", alpha = 0.4) +
   geom_line(aes(y = ow1_cwlevel, color = "OW1 Water Level"),
-            linewidth = 1.1,
-            linetype = "dashed") +
+            linewidth = 1.1) +
   geom_line(aes(color = "OW2 Water Level", y = ow2_cwlevel),
-            linewidth = 1.1,
-            linetype = "dashed") +
+            linewidth = 1.1) +
   geom_hline(aes(yintercept = 1.08, color = "Bottom of Crate"),
              linewidth = 0.6,
            linetype = "dashed")  +
   annotate("text", x =  ymd_hms("2025-04-26 06:00:00"),
-           y = .95, 
+           y = .91, 
            label = "Bottom of crate",
            hjust = 0) +
   geom_hline(yintercept = 0.0,
              linetype = "dashed") +
   annotate("text", x =  ymd_hms("2025-04-26 06:00:00"),
-           y = .15, 
+           y = .20, 
            label = "Bottom of pipe bedding",
            hjust = 0) +
   geom_hline(yintercept = 4.0, linetype = "dashed") +
@@ -156,17 +154,11 @@ ow_preevent <- ggplot(ow_comb |>
              y = 4.50, 
              label = "Top of Storage (OW1)",
              hjust = 0) +
-    geom_hline(yintercept = 2.08, linetype = "dashed") +
+    geom_hline(yintercept = 2.21, linetype = "dashed") +
     annotate("text",
              x =  ymd_hms("2025-04-28 06:00:00"),
-             y = 1.90, 
-             label = "Expected Max Response to Storm Event (OW2)",
-             hjust = 0) +
-      geom_hline(yintercept = 2.21, linetype = "dashed") +
-    annotate("text",
-             x =  ymd_hms("2025-04-28 06:00:00"),
-             y = 2.45, 
-             label = "Expected Max Response to Storm Event (OW1)",
+             y = 2.44, 
+             label = "Expected Max Response to Storm Event",
              hjust = 0) +
   coord_cartesian(ylim = c(0, 6)) +
   labs(
@@ -207,6 +199,16 @@ cowplot::plot_grid(rainfall_pre, ow_preevent,
                    )
 ```
 
+### Calculating the Percent of Storage Volume
+
+$$
+\begin{align}
+\text{Storage Volume } &= 88619 \cdot \frac{0.64}{12 \text{ in/ft}} \\ \\ 
+\text{Storage Volume } &= 4726 \text{ft}^3 \\ \\
+\text{\% of Volume } &= \frac{4726}{9545} \approx 50\text{\%}
+\end{align}
+$$
+
 ```{r}
 # OW2 plot after maintenance
 ow_postevent <- ggplot(ow_comb |> 
@@ -215,21 +217,19 @@ ow_postevent <- ggplot(ow_comb |>
                                 ymd_hms("2025-06-14 6:00:00"),
                                 ymd_hms("2025-06-18 6:00:00")
                                 )),
-                      aes(x = dtime)) +
-  #scale_x_date(date_breaks = "1 month", data_labels = "%D") +
-  #geom_col(aes(x = dtime, y = rainfall), color = "navy") +
+                      aes(x = dtime)) + geom_ribbon(aes(ymin = 0, ymax = 4), fill = "lightblue", alpha = 0.4) +
+  geom_ribbon(aes(ymin = 0, ymax = 4.25), fill = "lightblue", alpha = 0.4) +
   geom_line(aes(y = ow1_cwlevel, color = "OW1 Water Level"),
-            linewidth = 1.1,
-            linetype = "dashed") +
+            linewidth = 1.1) +
   geom_line(aes(color = "OW2 Water Level", y = ow2_cwlevel),
-            linewidth = 1.1, linetype = "dashed") +
+            linewidth = 1.1) +
   geom_hline(aes(yintercept = 1.08, color = "Bottom of Crate"),
-             linewidth = 0.6 )  +
+             linewidth = 0.6,
+             linetype = "dashed")  +
     annotate("text", x =  ymd_hms("2025-06-14 06:00:00"),
-           y = .95, 
+           y = .91, 
            label = "Bottom of crate",
-           hjust = 0,
-           color = "#E05B46") +
+           hjust = 0) +
     geom_hline(yintercept = 0.0,
              linetype = "dashed") +
   annotate("text",
@@ -248,15 +248,21 @@ ow_postevent <- ggplot(ow_comb |>
              y = 4.50,
              label = "Top of Storage (OW1)",
              hjust = 0) +
+    geom_hline(yintercept = 2.125, linetype = "dashed") +
+    annotate("text",
+             x =  ymd_hms("2025-06-17 00:00:00"),
+             y = 2.33, 
+             label = "Expected Max Response to Storm Event",
+             hjust = 0) +
   coord_cartesian(ylim = c(0, 6)) +
   labs(
     x = "Date",
     y = "Water level (ft)",
-    color = NULL
+    color = NULL,
+    title = "Water Level Response from 2025-06-14 Storm"
   )  +
   theme(legend.position = "bottom") +
    scale_color_manual(values = c(
-    "Bottom of Crate" = "#E05B46",
     "OW1 Water Level" = "cornflowerblue",
     "OW2 Water Level" = "#2a3782")) +
   scale_y_continuous(labels = function(x) sprintf("%.2f", x))
@@ -274,8 +280,7 @@ rainfall_post <- ggplot(ow_comb |>
   labs(
     x = NULL,
     y = "Rainfall (in)",
-    title = "1140-3-2 Water Level Response Post-Maintenance",
-    subtitle = "Water level response to a 0.64\" storm"
+    title = "Rainfall from 2025-06-14 Storm (Total: 0.64\")"
   )
   
 ```
