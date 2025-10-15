@@ -123,12 +123,16 @@ ow_preevent <- ggplot(ow_comb |>
                                 ymd_hms("2025-04-29 6:00:00")
                                 )),
                       aes(x = dtime)) +
+  # Storage volume for OW2
   geom_ribbon(aes(ymin = 0, ymax = 4), fill = "lightblue", alpha = 0.4) +
+  # Storage volume for OW1
   geom_ribbon(aes(ymin = 0, ymax = 4.25), fill = "lightblue", alpha = 0.4) +
+  # Water level line plots
   geom_line(aes(y = ow1_cwlevel, color = "OW1 Water Level"),
             linewidth = 1.1) +
   geom_line(aes(color = "OW2 Water Level", y = ow2_cwlevel),
             linewidth = 1.1) +
+  # Bottom of crate elevation
   geom_hline(aes(yintercept = 1.08, color = "Bottom of Crate"),
              linewidth = 0.6,
            linetype = "dashed")  +
@@ -136,30 +140,35 @@ ow_preevent <- ggplot(ow_comb |>
            y = .91, 
            label = "Bottom of crate",
            hjust = 0) +
+  # Bottom of pipe bedding elevation
   geom_hline(yintercept = 0.0,
              linetype = "dashed") +
   annotate("text", x =  ymd_hms("2025-04-26 06:00:00"),
            y = .20, 
            label = "Bottom of pipe bedding",
            hjust = 0) +
+  # Top of storage elevation (OW2)
   geom_hline(yintercept = 4.0, linetype = "dashed") +
     annotate("text",
              x =  ymd_hms("2025-04-26 06:00:00"),
              y = 3.80,
              label = "Top of Storage (OW2)",
              hjust = 0) +
+  # Top of storage elevation (OW1)
     geom_hline(yintercept = 4.25, linetype = "dashed") +
     annotate("text",
              x =  ymd_hms("2025-04-26 06:00:00"),
              y = 4.50, 
              label = "Top of Storage (OW1)",
              hjust = 0) +
+  # Expected response elevation
     geom_hline(yintercept = 2.21, linetype = "dashed") +
     annotate("text",
              x =  ymd_hms("2025-04-28 06:00:00"),
              y = 2.44, 
              label = "Expected Max Response to Storm Event",
              hjust = 0) +
+  # Zoom for water level plot
   coord_cartesian(ylim = c(0, 6)) +
   labs(
     title = "Water Level Response from 2025-04-26 Storm",
@@ -168,12 +177,14 @@ ow_preevent <- ggplot(ow_comb |>
     color = NULL
   )  +
   theme(legend.position = "bottom") +
+  # Colors for water levels
    scale_color_manual(values = c(
     "OW1 Water Level" = "cornflowerblue",
     "OW2 Water Level" = "#2a3782")) +
+  # Match y-axis formatting to rain plot
   scale_y_continuous(labels = function(x) sprintf("%.2f", x))
   
-
+# Rain plot
 rainfall_pre <- ggplot(ow_comb |> 
                       dplyr::filter(
                         between(dtime, 
@@ -192,6 +203,7 @@ rainfall_pre <- ggplot(ow_comb |>
 ```
 
 ```{r}
+# Combine plots
 cowplot::plot_grid(rainfall_pre, ow_preevent,
                    nrow = 2,
                    rel_heights = c(1,3),

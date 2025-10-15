@@ -11,7 +11,6 @@ library(readxl)
 
 ```{r}
 # Function for reading QAQC files
-
 read_qaqc <- function(file_path) {
   # Read Final_Import_Site sheet
   qaqc <- readxl::read_xlsx(file_path, sheet = "Final_Import_Site#") |>
@@ -45,11 +44,13 @@ rain_q1 <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q1_15min_QAQC_20250710_KR
 rain_q2 <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q2_15min_QAQC_20250710_KR.xlsx",
              sheet = "Rainfall Data")
 
+# Combine Q1 and Q2 data into one
 rain <- rbind(rain_q1, rain_q2) |>
   rename(dtime = `DateTime`,
          rainfall = `Rainfall (in.)`,
          gauge_uid = `Rain Gauge #`,
          rain_event_uid = `Rainfall Event ID`) |>
+  # Make sure only one dtime value if overlap
   distinct(dtime, .keep_all = TRUE)
 
 ```
@@ -77,7 +78,7 @@ ow2_comb <- rbind(ow2_level_q1_corrected, ow2_level_q2_corrected)
 ow_comb <- ow1_comb |>
   # Combine with ow2
   left_join(ow2_comb, join_by(dtime == dtime)) |>
-  # Comvibine with rain data
+  # Combine with rain data
   left_join(rain, join_by(dtime == dtime)) |>
   mutate(rainfall = if_else(is.na(rainfall), 0, rainfall))
 ```
@@ -91,12 +92,13 @@ ow_preevent <- ggplot(ow_comb |>
                                 ymd_hms("2025-06-20 6:00:00")
                                 )),
                       aes(x = dtime)) +
-  #scale_x_date(date_breaks = "1 month", data_labels = "%D") +
-  #geom_col(aes(x = dtime, y = rainfall), color = "navy") +
+  # OW1 water level
   geom_line(aes(y = ow1_cwlevel, color = "OW1 Water Level"),
             linewidth = 1.1) +
+  # OW2 water level
   geom_line(aes(color = "OW2 Water Level", y = ow2_cwlevel),
             linewidth = 1.1) +
+  # Bottom of crate elevation
   geom_hline(aes(yintercept = 1.08),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -104,24 +106,28 @@ ow_preevent <- ggplot(ow_comb |>
            y = .91, 
            label = "Bottom of crate",
            hjust = 0) +
+  # Bottom of pipe bedding elevation
   geom_hline(yintercept = 0.0,
              linetype = "dashed") +
   annotate("text", x =  ymd_hms("2025-02-25 06:00:00"),
            y = .29, 
            label = "Bottom of pipe bedding",
            hjust = 0) +
+  # OW2 top of storage elevation
   geom_hline(yintercept = 4.0, linetype = "dashed") +
     annotate("text",
              x =  ymd_hms("2025-02-25 06:00:00"),
              y = 3.80,
              label = "Top of Storage (OW2)",
              hjust = 0) +
+  # OW1 top of storage elevation
     geom_hline(yintercept = 4.25, linetype = "dashed") +
     annotate("text",
              x =  ymd_hms("2025-02-25 06:00:00"),
              y = 4.50, 
              label = "Top of Storage (OW1)",
              hjust = 0) +
+  # Zoom level for plot 
   coord_cartesian(ylim = c(0, 6)) +
   labs(
     x = "Date",
@@ -130,13 +136,16 @@ ow_preevent <- ggplot(ow_comb |>
     title = "1140-3-2 Water Level Response (15-minute interval)"
   )  +
   theme(legend.position = "bottom") +
+  # Color for water levels
    scale_color_manual(values = c(
     "OW1 Water Level" = "cornflowerblue",
     "OW2 Water Level" = "#2a3782")) +
+  # Set y-axis formating to match rain
   scale_y_continuous(labels = function(x) sprintf("%.2f", x))
   
-
-rainfall_pre <- ggplot(tested <- ow_comb |>
+# Rain plot
+rainfall_pre <- ggplot(ow_comb |>
+                         # 3-hour interval to show all events
                          group_by(hour = lubridate::floor_date(dtime, "3 hour")) |>
                          summarize(hr_rain = sum(rainfall))|> 
                          dplyr::filter(
@@ -157,6 +166,7 @@ rainfall_pre <- ggplot(tested <- ow_comb |>
 ```
 
 ```{r}
+# Combine into one plot
 cowplot::plot_grid(rainfall_pre, ow_preevent,
                    nrow = 2,
                    rel_heights = c(1,3),

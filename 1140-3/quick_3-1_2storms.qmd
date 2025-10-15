@@ -48,7 +48,7 @@ sw1_level_q2_corrected <- sw1_level_q2_corrected |>
   mutate(sw1_cwlevel = cwlevel) |> select(-cwlevel)
 
 sw_comb <- sw1_level_q2_corrected |>
-  # Comvibine with rain data
+  # Combine with rain data
   left_join(rain, join_by(dtime == dtime)) |>
   mutate(rainfall = if_else(is.na(rainfall), 0, rainfall))
 ```
@@ -62,9 +62,12 @@ sw_preevent <- ggplot(sw_comb |>
                                 ymd_hms("2025-04-29 6:00:00")
                                 )),
                       aes(x = dtime)) +
+  # Storage volume
   geom_ribbon(aes(ymin = 0.0, ymax = 0.75), fill = "lightblue", alpha = 0.4) +
+  # Water level line plot
   geom_line(aes(y = sw1_cwlevel, color = "SW1 Water Level"),
             linewidth = 1.1) +
+  # Domed Riser Rim Elevation
   geom_hline(aes(yintercept = 0.75,),
              linewidth = 0.6,
              linetype = "dashed") +
@@ -73,6 +76,7 @@ sw_preevent <- ggplot(sw_comb |>
              y = 1, 
              label = "Domed Riser Rim Elevation",
              hjust = 0) +
+  # Bottom of Soil Elevation
   geom_hline(aes(yintercept = -1.75),
              linewidth = 0.6,
              linetype = "dashed") +
@@ -81,12 +85,14 @@ sw_preevent <- ggplot(sw_comb |>
              y = -1.5, 
              label = "Bottom of Soil",
              hjust = 0) +
+  # Top of Soil Elevation
   geom_hline(yintercept = 0, linetype = "dashed") +
   annotate("text",
            x =  ymd_hms("2025-04-26 06:00:00"),
            y = 0.26,
            label = "Top of Soil", 
            hjust = 0) +
+  # Zoom for level plot
   coord_cartesian(ylim = c(-3, 4)) +
   labs(
     x = "Date",
@@ -95,12 +101,14 @@ sw_preevent <- ggplot(sw_comb |>
     title = "Water Level Response from 2025-04-26 Storm"
   )  +
   theme(legend.position = "bottom") +
+  # Color for plot lines
    scale_color_manual(values = c(
     "Top of Soil" = "black",
     "SW1 Water Level" = "cornflowerblue")) +
+  # Adjust y-axis formatting to match rain plot
   scale_y_continuous(labels = function(x) sprintf("%.2f", x))
   
-
+# Rain plot
 rainfall_pre <- ggplot(sw_comb |> 
                       dplyr::filter(
                         between(dtime, 
@@ -119,6 +127,7 @@ rainfall_pre <- ggplot(sw_comb |>
 ```
 
 ```{r}
+# Combine both plots
 cowplot::plot_grid(rainfall_pre, sw_preevent,
                    nrow = 2,
                    rel_heights = c(1,3),
