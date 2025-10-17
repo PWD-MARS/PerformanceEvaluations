@@ -58,16 +58,16 @@ rain <- rbind(rain_q1, rain_q2) |>
 ```{r}
 # Adjust for distance between bedding and crate
 ow1_level_q2_corrected <- ow1_level_q2_corrected |>
-  mutate(ow1_cwlevel = cwlevel + 1.08) |> select(-cwlevel)
+  mutate(ow1_cwlevel = cwlevel + 0.25) |> select(-cwlevel)
 
 ow1_level_q1_corrected <- ow1_level_q1_corrected |>
-  mutate(ow1_cwlevel = cwlevel + 1.08) |> select(-cwlevel)
+  mutate(ow1_cwlevel = cwlevel + 0.25) |> select(-cwlevel)
 
 ow2_level_q1_corrected <- ow2_level_q1_corrected |>
-  mutate(ow2_cwlevel = cwlevel+1.08) |> select(-cwlevel)
+  mutate(ow2_cwlevel = cwlevel+ 0.25) |> select(-cwlevel)
 
 ow2_level_q2_corrected <- ow2_level_q2_corrected |>
-  mutate(ow2_cwlevel = cwlevel + 1.08) |> select(-cwlevel)
+  mutate(ow2_cwlevel = cwlevel + 0.25) |> select(-cwlevel)
 
 # Combine each OW data into one df
 ow1_comb <- rbind(ow1_level_q1_corrected, ow1_level_q2_corrected)
@@ -92,6 +92,7 @@ ow_preevent <- ggplot(ow_comb |>
                                 ymd_hms("2025-06-20 6:00:00")
                                 )),
                       aes(x = dtime)) +
+   geom_ribbon(aes(ymin = 0, ymax = 3.17), fill = "lightblue", alpha = 0.4) +
   # OW1 water level
   geom_line(aes(y = ow1_cwlevel, color = "OW1 Water Level"),
             linewidth = 1.1) +
@@ -99,20 +100,20 @@ ow_preevent <- ggplot(ow_comb |>
   geom_line(aes(color = "OW2 Water Level", y = ow2_cwlevel),
             linewidth = 1.1) +
   # Bottom of crate elevation
-  geom_hline(aes(yintercept = 1.08),
+  geom_hline(aes(yintercept = 0.25),
              linewidth = 0.6,
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms("2025-02-25 06:00:00"),
-           y = .91, 
-           label = "Bottom of crate",
+           y = 0.8, 
+           label = "Bottom of Crate",
            hjust = 0) +
   # Bottom of pipe bedding elevation
-  geom_hline(yintercept = 0.0,
-             linetype = "dashed") +
-  annotate("text", x =  ymd_hms("2025-02-25 06:00:00"),
-           y = .29, 
-           label = "Bottom of pipe bedding",
-           hjust = 0) +
+  # geom_hline(yintercept = 0.0,
+  #            linetype = "dashed") +
+  # annotate("text", x =  ymd_hms("2025-02-25 06:00:00"),
+  #          y = .29, 
+  #          label = "Bottom of pipe bedding",
+  #          hjust = 0) +
   # OW2 top of storage elevation
   geom_hline(yintercept = 4.0, linetype = "dashed") +
     annotate("text",
@@ -120,15 +121,15 @@ ow_preevent <- ggplot(ow_comb |>
              y = 3.80,
              label = "Top of Storage (OW2)",
              hjust = 0) +
-  # OW1 top of storage elevation
-    geom_hline(yintercept = 4.25, linetype = "dashed") +
-    annotate("text",
-             x =  ymd_hms("2025-02-25 06:00:00"),
-             y = 4.50, 
-             label = "Top of Storage (OW1)",
-             hjust = 0) +
+  # # OW1 top of storage elevation
+  #   geom_hline(yintercept = 4.25, linetype = "dashed") +
+  #   annotate("text",
+  #            x =  ymd_hms("2025-02-25 06:00:00"),
+  #            y = 4.50, 
+  #            label = "Top of Storage (OW1)",
+  #            hjust = 0) +
   # Zoom level for plot 
-  coord_cartesian(ylim = c(0, 6)) +
+  coord_cartesian(ylim = c(-.5, 4)) +
   labs(
     x = "Date",
     y = "Water level (ft)",

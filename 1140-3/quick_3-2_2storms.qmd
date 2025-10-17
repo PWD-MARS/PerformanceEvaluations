@@ -319,7 +319,7 @@ ow_postevent <- ggplot(ow_comb |>
   scale_y_continuous(labels = function(x) sprintf("%.2f", x))
   
 # Rain plot
-rainfall_pre <- ggplot(ow_comb |> 
+rainfall_post <- ggplot(ow_comb |> 
                       dplyr::filter(
                         between(dtime, 
                                 ymd_hms("2025-06-14 06:00:00"),
