@@ -98,7 +98,7 @@ sw_preevent <- ggplot(sw_comb |>
     x = "Date",
     y = "Water level (ft)",
     color = NULL,
-    title = "Water Level Response from 2025-04-26 Storm"
+    title = "1140-3-1 Water Level Response from 2025-04-26 Storm"
   )  +
   theme(legend.position = "bottom") +
   # Color for plot lines
@@ -121,7 +121,7 @@ rainfall_pre <- ggplot(sw_comb |>
   labs(
     x = NULL,
     y = "Rainfall (in)",
-    title = "Rainfall from 2025-04-26 Storm (Total: 0.67\")"
+    title = "1140-3-1 Rainfall from 2025-04-26 Storm (Total: 0.67\")"
   )
   
 ```
@@ -153,7 +153,7 @@ sw_postevent <- ggplot(sw_comb |>
     annotate("text",
              x =  ymd_hms("2025-06-14 06:00:00"),
              y = 1, 
-             label = "Domed Riser Rim Eleveation",
+             label = "Domed Riser Rim Elevation",
              hjust = 0) +
   geom_hline(aes(yintercept = -1.75),
              linewidth = 0.6,
@@ -174,7 +174,7 @@ sw_postevent <- ggplot(sw_comb |>
     x = "Date",
     y = "Water level (ft)",
     color = NULL,
-    title = "Water Level Response from 2025-06-14 Storm"
+    title = "1140-3-1 Water Level Response from 2025-06-14 Storm"
   )  +
   theme(legend.position = "bottom") +
    scale_color_manual(values = c(
@@ -195,7 +195,7 @@ rainfall_post <- ggplot(sw_comb |>
   labs(
     x = NULL,
     y = "Rainfall (in)",
-    title = "Rainfall from 2025-06-14 Storm (Total: 0.64\")"
+    title = "1140-3-1 Rainfall from 2025-06-14 Storm (Total: 0.64\")"
   )
 ```
 

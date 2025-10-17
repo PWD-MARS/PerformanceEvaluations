@@ -115,12 +115,17 @@ ow_preevent <- ggplot(ow_comb |>
   #          label = "Bottom of pipe bedding",
   #          hjust = 0) +
   # OW2 top of storage elevation
-  geom_hline(yintercept = 4.0, linetype = "dashed") +
+  geom_hline(yintercept = 3.17, linetype = "dashed") +
     annotate("text",
              x =  ymd_hms("2025-02-25 06:00:00"),
-             y = 3.80,
-             label = "Top of Storage (OW2)",
+             y = 3.37,
+             label = "Top of Stone Storage",
              hjust = 0) +
+    geom_hline(yintercept = 0.0) +
+  annotate("text", x =  ymd_hms("2025-02-25 06:00:00"),
+           y = -0.1, 
+           label = "Bottom of Stone Storage",
+           hjust = 0) +
   # # OW1 top of storage elevation
   #   geom_hline(yintercept = 4.25, linetype = "dashed") +
   #   annotate("text",
