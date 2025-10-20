@@ -86,7 +86,7 @@ sw_preevent <- ggplot(sw_comb |>
              linetype = "dashed") +
     annotate("text",
              x =  ymd_hms("2025-03-10 06:00:00"),
-             y = 1, 
+             y = 0.85, 
              label = "Domed Riser Rim Elevation",
              hjust = 0) +
   # Bottom of Soil Elevation
@@ -102,11 +102,11 @@ sw_preevent <- ggplot(sw_comb |>
   geom_hline(yintercept = 0, linetype = "dashed") +
   annotate("text",
            x =  ymd_hms("2025-03-10 06:00:00"),
-           y = 0.26,
+           y = 0.1,
            label = "Top of Soil", 
            hjust = 0) +
   # Set zoom for plot
-  coord_cartesian(ylim = c(-3, 4)) +
+  coord_cartesian(ylim = c(-0.5, 2)) +
   labs(
     x = "Date",
     y = "Water level (ft)",
