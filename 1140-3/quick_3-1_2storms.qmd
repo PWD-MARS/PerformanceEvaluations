@@ -1,0 +1,208 @@
+---
+title: "quick_plots"
+format: html
+editor: visual
+---
+
+```{r}
+#| include: false
+library(tidyverse)
+library(readxl)
+```
+
+```{r}
+read_qaqc <- function(file_path) {
+  # Read Final_Import_Site sheet
+  qaqc <- readxl::read_xlsx(file_path, sheet = "Final_Import_Site#") |>
+     # Datetime correction when converting from decimal
+    dplyr::mutate(dtime = `Standard Dtime` + lubridate::seconds(1),
+                  dtime = lubridate::floor_date(dtime, "minute")) |>
+    dplyr::select(dtime,  `Corrected Water Depth (ft)`) |>
+    dplyr::rename(cwlevel = `Corrected Water Depth (ft)`)
+}
+```
+
+## Import QAQC
+
+```{r}
+# Read Q2 QAQC file
+sw1_level_q2_corrected <- read_qaqc("data/1140-3-1/1140-3-1_SW1_25Q2_15min_QAQC_20250710_KR.xlsx")
+
+# Rain data from excel
+rain <- read_xlsx("data/1140-3-1/1140-3-1_SW1_25Q2_15min_QAQC_20250710_KR.xlsx",
+                  sheet = "Rainfall Data")
+
+rain <- 
+  rain |> 
+  rename(dtime = `DateTime`,
+         rainfall = `Rainfall (in.)`,
+         gauge_uid = `Rain Gauge #`,
+         rain_event_uid = `Rainfall Event ID`) 
+
+```
+
+```{r}
+#SW1 data
+sw1_level_q2_corrected <- sw1_level_q2_corrected |>
+  # Adjust for sensor at top of soil
+  mutate(sw1_cwlevel = cwlevel) |> select(-cwlevel)
+
+sw_comb <- sw1_level_q2_corrected |>
+  # Combine with rain data
+  left_join(rain, join_by(dtime == dtime)) |>
+  mutate(rainfall = if_else(is.na(rainfall), 0, rainfall))
+```
+
+```{r}
+# SW1 plot before maintenance
+sw_preevent <- ggplot(sw_comb |> 
+                      dplyr::filter(
+                        between(dtime, 
+                                ymd_hms("2025-04-26 6:00:00"),
+                                ymd_hms("2025-04-29 6:00:00")
+                                )),
+                      aes(x = dtime)) +
+  # Storage volume
+  geom_ribbon(aes(ymin = 0.0, ymax = 0.75), fill = "lightblue", alpha = 0.4) +
+  # Water level line plot
+  geom_line(aes(y = sw1_cwlevel, color = "SW1 Water Level"),
+            linewidth = 1.1) +
+  # Domed Riser Rim Elevation
+  geom_hline(aes(yintercept = 0.75,),
+             linewidth = 0.6,
+             linetype = "dashed") +
+    annotate("text",
+             x =  ymd_hms("2025-04-26 06:00:00"),
+             y = .85, 
+             label = "Domed Riser Rim Elevation",
+             hjust = 0) +
+  # Bottom of Soil Elevation
+  geom_hline(aes(yintercept = -1.75),
+             linewidth = 0.6,
+             linetype = "dashed") +
+    annotate("text",
+             x =  ymd_hms("2025-04-26 06:00:00"),
+             y = -1.5, 
+             label = "Bottom of Soil",
+             hjust = 0) +
+  # Top of Soil Elevation
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  annotate("text",
+           x =  ymd_hms("2025-04-26 06:00:00"),
+           y = 0.1,
+           label = "Top of Soil", 
+           hjust = 0) +
+  # Zoom for level plot
+  coord_cartesian(ylim = c(-0.5, 2)) +
+  labs(
+    x = "Date",
+    y = "Water level (ft)",
+    color = NULL,
+    title = "1140-3-1 Water Level Response from 2025-04-26 Storm"
+  )  +
+  theme(legend.position = "bottom") +
+  # Color for plot lines
+   scale_color_manual(values = c(
+    "Top of Soil" = "black",
+    "SW1 Water Level" = "cornflowerblue")) +
+  # Adjust y-axis formatting to match rain plot
+  scale_y_continuous(labels = function(x) sprintf("%.2f", x))
+  
+# Rain plot
+rainfall_pre <- ggplot(sw_comb |> 
+                      dplyr::filter(
+                        between(dtime, 
+                                ymd_hms("2025-04-26 06:00:00"),
+                                ymd_hms("2025-04-29 06:00:00")
+                                )),
+                   aes(y = rainfall)) +
+  geom_col(aes(dtime)) + 
+  scale_y_continuous(lim = c(0, 1)) +
+  labs(
+    x = NULL,
+    y = "Rainfall (in)",
+    title = "1140-3-1 Rainfall from 2025-04-26 Storm (Total: 0.67\")"
+  )
+  
+```
+
+```{r}
+# Combine both plots
+cowplot::plot_grid(rainfall_pre, sw_preevent,
+                   nrow = 2,
+                   rel_heights = c(1,3),
+                   rel_widths = c(1,1)
+                   )
+```
+
+```{r}
+# SW1 plot before maintenance
+sw_postevent <- ggplot(sw_comb |> 
+                      dplyr::filter(
+                        between(dtime, 
+                                ymd_hms("2025-06-14 6:00:00"),
+                                ymd_hms("2025-06-18 6:00:00")
+                                )),
+                      aes(x = dtime)) +
+  geom_ribbon(aes(ymin = 0.0, ymax = 0.75), fill = "lightblue", alpha = 0.4) +
+  geom_line(aes(y = sw1_cwlevel, color = "SW1 Water Level"),
+            linewidth = 1.1) +
+  geom_hline(aes(yintercept = 0.75),
+             linewidth = 0.6,
+             linetype = "dashed") +
+    annotate("text",
+             x =  ymd_hms("2025-06-14 06:00:00"),
+             y = 0.85, 
+             label = "Domed Riser Rim Elevation",
+             hjust = 0) +
+  geom_hline(aes(yintercept = -1.75),
+             linewidth = 0.6,
+             linetype = "dashed") +
+    annotate("text",
+             x =  ymd_hms("2025-06-14 06:00:00"),
+             y = -1.5, 
+             label = "Bottom of Soil",
+             hjust = 0) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  annotate("text",
+           x =  ymd_hms("2025-06-14 06:00:00"),
+           y = 0.1,
+           label = "Top of Soil", 
+           hjust = 0) +
+  coord_cartesian(ylim = c(-0.5, 2)) +
+  labs(
+    x = "Date",
+    y = "Water level (ft)",
+    color = NULL,
+    title = "1140-3-1 Water Level Response from 2025-06-14 Storm"
+  )  +
+  theme(legend.position = "bottom") +
+   scale_color_manual(values = c(
+    "Top of Soil" = "black",
+    "SW1 Water Level" = "cornflowerblue")) +
+  scale_y_continuous(labels = function(x) sprintf("%.2f", x))
+  
+
+rainfall_post <- ggplot(sw_comb |> 
+                      dplyr::filter(
+                        between(dtime, 
+                                ymd_hms("2025-06-14 06:00:00"),
+                                ymd_hms("2025-06-18 06:00:00")
+                                )),
+                   aes(y = rainfall)) +
+  geom_col(aes(dtime)) + 
+  scale_y_continuous(lim = c(0, 1)) +
+  labs(
+    x = NULL,
+    y = "Rainfall (in)",
+    title = "1140-3-1 Rainfall from 2025-06-14 Storm (Total: 0.64\")"
+  )
+```
+
+```{r}
+cowplot::plot_grid(rainfall_post, sw_postevent,
+                   nrow = 2,
+                   rel_heights = c(1,3),
+                   rel_widths = c(1,1)
+                   )
+```

@@ -1,0 +1,153 @@
+---
+title: "sw1_quarterly"
+format: html
+editor: visual
+---
+
+```{r}
+#| include: false
+library(tidyverse)
+library(readxl)
+```
+
+```{r}
+read_qaqc <- function(file_path) {
+  # Read Final_Import_Site sheet
+  qaqc <- readxl::read_xlsx(file_path, sheet = "Final_Import_Site#") |>
+     # Datetime correction when converting from decimal
+    dplyr::mutate(dtime = `Standard Dtime` + lubridate::seconds(1),
+                  dtime = lubridate::floor_date(dtime, "minute")) |>
+    dplyr::select(dtime,  `Corrected Water Depth (ft)`) |>
+    dplyr::rename(cwlevel = `Corrected Water Depth (ft)`)
+}
+```
+
+## Import QAQC
+
+```{r}
+# Read Q1 QAQC file
+sw1_level_q1_corrected <- read_qaqc("data/1140-3-1/1140-3-1_SW1_25Q1_15min_QAQC_20250710_KR.xlsx")
+
+
+# Read Q2 QAQC file
+sw1_level_q2_corrected <- read_qaqc("data/1140-3-1/1140-3-1_SW1_25Q2_15min_QAQC_20250710_KR.xlsx")
+
+
+rain_q1 <- read_xlsx("data/1140-3-1/1140-3-1_SW1_25Q1_15min_QAQC_20250710_KR.xlsx",
+                  sheet = "Rainfall Data")
+
+# Rain Q2 data from excel
+rain_q2 <- read_xlsx("data/1140-3-1/1140-3-1_SW1_25Q2_15min_QAQC_20250710_KR.xlsx",
+                  sheet = "Rainfall Data")
+
+# Combine Q1 and Q2 rain data
+rain <- rbind(rain_q1, rain_q2) |> 
+  rename(dtime = `DateTime`,
+         rainfall = `Rainfall (in.)`,
+         gauge_uid = `Rain Gauge #`,
+         rain_event_uid = `Rainfall Event ID`) |>
+  # Remove duplicate intervals between Q1 and Q2
+  distinct(dtime, .keep_all = TRUE)
+
+```
+
+```{r}
+# SW1 data - Largely to match OW code/Historical
+sw1_level_q1_corrected <- sw1_level_q1_corrected |>
+  mutate(sw1_cwlevel = cwlevel) |> select(-cwlevel)
+
+sw1_level_q2_corrected <- sw1_level_q2_corrected |>
+  # Adjust for sensor at top of soil
+  mutate(sw1_cwlevel = cwlevel) |> select(-cwlevel)
+
+# Add rain  to level data
+sw_comb <- rbind(sw1_level_q1_corrected, sw1_level_q2_corrected) |>
+  # Comvibine with rain data
+  left_join(rain, join_by(dtime == dtime)) |>
+  mutate(rainfall = if_else(is.na(rainfall), 0, rainfall))
+```
+
+```{r}
+# SW1 plot before maintenance
+sw_preevent <- ggplot(sw_comb |> 
+                      dplyr::filter(
+                        between(dtime, 
+                                ymd_hms("2025-03-10 6:00:00"),
+                                ymd_hms("2025-06-20 6:00:00")
+                                )),
+                      aes(x = dtime)) +
+  geom_ribbon(aes(ymin = 0.0, ymax = 0.75), fill = "lightblue", alpha = 0.4) +
+  # Water level line plot
+  geom_line(aes(y = sw1_cwlevel, color = "SW1 Water Level"),
+            linewidth = 1.1) +
+  # Domed Riser Rim Elevation
+  geom_hline(aes(yintercept = 0.75),
+             linewidth = 0.6,
+             linetype = "dashed") +
+    annotate("text",
+             x =  ymd_hms("2025-03-10 06:00:00"),
+             y = 0.85, 
+             label = "Domed Riser Rim Elevation",
+             hjust = 0) +
+  # Bottom of Soil Elevation
+  geom_hline(aes(yintercept = -1.75),
+             linewidth = 0.6,
+             linetype = "dashed") +
+    annotate("text",
+             x =  ymd_hms("2025-03-10 06:00:00"),
+             y = -1.5, 
+             label = "Bottom of Soil",
+             hjust = 0) +
+  # Top of Soil Elevation
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  annotate("text",
+           x =  ymd_hms("2025-03-10 06:00:00"),
+           y = 0.1,
+           label = "Top of Soil", 
+           hjust = 0) +
+  # Set zoom for plot
+  coord_cartesian(ylim = c(-0.5, 2)) +
+  labs(
+    x = "Date",
+    y = "Water level (ft)",
+    color = NULL,
+    title = "1140-3-1 Water Level Response (15-minute interval)"
+  )  +
+  theme(legend.position = "bottom") +
+  # Colors for plots
+   scale_color_manual(values = c(
+    "Top of Soil" = "black",
+    "SW1 Water Level" = "cornflowerblue")) +
+  # Consistent y-scale formatting for level and rain
+  scale_y_continuous(labels = function(x) sprintf("%.2f", x))
+  
+# Rainfall plots
+rainfall_pre <- ggplot(sw_comb |>
+                         # Group by 3-hour intervals to show all events
+                         group_by(hour = lubridate::floor_date(dtime, "1 hour")) |>
+                         summarize(hr_rain = sum(rainfall))|> 
+                         dplyr::filter(
+                           between(hour, 
+                                ymd_hms("2025-02-25 06:00:00"),
+                                ymd_hms("2025-06-20 06:00:00")
+                                )),
+                   aes(y = hr_rain)) +
+  geom_col(aes(hour)) + 
+  # Set zoom level
+  scale_y_continuous(lim = c(0, 2)) +
+  labs(
+    x = NULL,
+    y = "Rainfall (in)",
+    title = "1140-3-1 Rainfall (3-hour interval)"
+  )
+  
+```
+
+```{r}
+# Combine plots into one
+cowplot::plot_grid(rainfall_pre, sw_preevent,
+                   nrow = 2,
+                   rel_heights = c(1,3),
+                   rel_widths = c(1,1)
+                   )
+```
