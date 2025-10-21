@@ -70,7 +70,6 @@ cs1_monitor_data <- marsFetchLevelData(mars_con,
                                        start_date = eval_start,
                                        end_date = eval_end,
                                        sump_correct = FALSE) %>%
-  mutate(dtime_est = with_tz(dtime, tzone = "EST"))%>%
   mutate(cs1level_ft = level_ft - cs1_ref_depth) 
 
 # Import OW1 monitoring data for full monitoring period
@@ -80,7 +79,6 @@ ow1_monitor_data <- marsFetchLevelData(mars_con,
                                        start_date = eval_start,
                                        end_date = eval_end,
                                        sump_correct = FALSE) %>%
-  mutate(dtime_est = with_tz(dtime, tzone = "EST")) %>%
   mutate(ow1level_ft = level_ft - ow1_ref_depth)
 
 # Import rainfall data for full monitoring period
@@ -90,40 +88,40 @@ rain_data <- marsFetchRainfallData(
   start_date = eval_start,
   end_date = eval_end,
   'gage'
-) %>%
-  mutate(dtime_est = force_tz(dtime, "EST"))
+) 
 
 # Combine cs1 and ow1 data into single dataframe
-full_data <- right_join(cs1_monitor_data, ow1_monitor_data, by = 'dtime_est') %>%
-  left_join(rain_data, by = 'dtime_est') %>%
-  select(dtime_est, ow1level_ft, cs1level_ft, rainfall_in) %>%
+full_data <- right_join(cs1_monitor_data, ow1_monitor_data, by = 'dtime') %>%
+  left_join(rain_data, by = 'dtime') %>%
+  select(dtime, ow1level_ft, cs1level_ft, rainfall_in) %>%
   mutate(rainfall_in = replace_na(rainfall_in, 0))
 
 rm(cs1_monitor_data, ow1_monitor_data, rain_data)
 
 
+
 # Import event metrics
-event_data <- read.csv('63761/output/metrics_2025-02-28.csv') %>%
-  mutate(eventdatastart_est = as_datetime(eventdatastart_est), 
-         eventdataend_est = as_datetime(eventdataend_est)) %>%
+event_data <- read.csv('63761/output/metrics_2025-02-27.csv') %>%
+  mutate(eventdatastart = as_datetime(eventdatastart), 
+         eventdataend = as_datetime(eventdataend)) %>%
   filter(eventdepth_in >= mindepth_in & eventpeakintensity_inhr >= minpeakintensity_inhr)
 
 ### Create storm plot for each big storm
 for(i in 1:length(event_data$gage_event_uid)) {
-  data_start_date <- format(date(event_data$eventdatastart_est[i]), '%Y-%m-%d')
+  data_start_date <- format(date(event_data$eventdatastart[i]), '%Y-%m-%d')
   # Subset monitoring data
   full_data_i <- full_data %>%
-    filter(dtime_est >= event_data$eventdatastart_est[i] - hours(6) & 
-             dtime_est <= event_data$eventdataend_est[i] + days(1))
+    filter(dtime >= event_data$eventdatastart[i] - hours(6) & 
+             dtime <= event_data$eventdataend[i] + days(1))
            
   # Reshape monitoring data
   reshaped_data_i <- full_data_i %>%
     select(-rainfall_in) %>%
-    pivot_longer(-dtime_est, names_to = "location", values_to = "water_level_ft")
+    pivot_longer(-dtime, names_to = "location", values_to = "water_level_ft")
   #Create wl plot
   wl_ts <-
     ggplot(reshaped_data_i,
-           aes(x = dtime_est, y = water_level_ft, color = location)) +
+           aes(x = dtime, y = water_level_ft, color = location)) +
     geom_line(linewidth = 1) +
     ylab("Water Level (ft)") +
     xlab("Date") +
@@ -151,7 +149,7 @@ for(i in 1:length(event_data$gage_event_uid)) {
         # annotate(
         #   "text",
         #   size = unit(2.6, 'pt'),
-        #   x = event_data$eventdataend_est[i] + days(1),
+        #   x = event_data$eventdataend + days(1),
         #   y = key_depths[j] + 0.05,
         #   label = key_elev_descrips[j],
         #   hjust = 1
@@ -159,7 +157,7 @@ for(i in 1:length(event_data$gage_event_uid)) {
     }
   }
   # Create rainfall plot
-  rain_ts <- ggplot(full_data_i, aes(dtime_est)) +
+  rain_ts <- ggplot(full_data_i, aes(dtime)) +
     geom_col(aes(y = rainfall_in)) +
     ylab("Rainfall (in)") +
     xlab("Date") +

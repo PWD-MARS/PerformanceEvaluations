@@ -1,25 +1,27 @@
-### Script to create plots of rain event depth or intensity vs. overtopping during a monitoring period
+### Script to create plots of rain event depth or intensity vs. overtopping at Ferko 411-1-1 for full monitoring period
 
 # Library necessary packages 
 library(tidyverse)
 library(lubridate)
 
 # Set event info and design targets
+smp_id = '411-1-1'
 end_date = "2025-04-09"
 event_dates <- c("2021-05-03", "2021-12-01", "2023-02-22") %>% 
   lubridate::as_datetime()
 event_descriptions <- c("trash guard cleaned", "trash guard cleaned", "trash guard removed") 
 peak_intensity <- 2.5 # Philadelphia 1-year, 15-minute peak intensity, in/hr
-design_storm <- 1.6 # Design storm depth, in
+design_depth <- 1.6 # Design storm depth, in
 
 # Read in metrics file
-smp_metrics <- read.csv(paste0("output/metrics_", end_date, ".csv")) %>%
- mutate(eventdatastart_est = force_tz(lubridate::ymd_hms(eventdatastart_est), "EST")) %>%
- mutate(eventdataend_est = force_tz(lubridate::ymd_hms(eventdataend_est), "EST"))
+smp_metrics <- read.csv(paste0(smp_id, "/output/metrics_", end_date, ".csv")) %>%
+  mutate(eventdatastart = ymd_hms(eventdatastart),
+         eventdataend = ymd_hms(eventdataend))
+  
  
 # Find some min/max values to help with setting axes
 # May be able to delete this in future with smart plot settings
-date_range <- range(pretty(smp_metrics$eventdatastart_est))
+date_range <- range(smp_metrics$eventdatastart)
 max_obs_intensity <- max(smp_metrics$eventpeakintensity_inhr)
 intensity_plot_max <- max(peak_intensity, max_obs_intensity)
 max_obs_depth <- max(smp_metrics$eventdepth_in)
@@ -27,7 +29,7 @@ depth_plot_max <- max(design_storm, max_obs_depth)
 
 # Create intensity vs. overtopping plot
 intensity_plot <- ggplot(smp_metrics,
-                         aes(x = eventdatastart_est, 
+                         aes(x = eventdatastart, 
                              y = eventpeakintensity_inhr)) + 
   geom_point(aes(color = overtop, shape = overtop), size=2) + 
   scale_color_manual(values = c('blue', 'red')) + 
@@ -56,11 +58,11 @@ if(length(event_dates) > 0 & length(event_descriptions) > 0){
 }
 
 intensity_plot
-ggsave(paste0("output/intensity_overtopping_plot_", end_date, ".png"))
+ggsave(paste0(smp_id, "/output/intensity_overtopping_plot_", end_date, ".png"))
 
 # Create intensity vs. overtopping plot
 depth_plot <- ggplot(smp_metrics,
-                         aes(x = eventdatastart_est, 
+                         aes(x = eventdatastart, 
                              y = eventdepth_in)) + 
   geom_point(aes(color = overtop, shape = overtop), size=2) + 
   scale_color_manual(values = c('blue', 'red')) + 
@@ -89,4 +91,4 @@ if(length(event_dates) > 0 & length(event_descriptions) > 0){
 }
 
 depth_plot
-ggsave(paste0("output/depth_overtopping_plot_", end_date, ".png"))
+ggsave(paste0(smp_id, "/output/depth_overtopping_plot_", end_date, ".png"))

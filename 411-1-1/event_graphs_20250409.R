@@ -1,14 +1,23 @@
 ### Script to create plots for each rain event over a monitoring period
 
+
 #### 0.1 library necessary packages #### 
 library(tidyverse); library(ggplot2)
 library(pwdgsi); library(odbc)
-library(DBI); library(lubridate)
+library(pool); library(lubridate)
 library(magrittr)
 
-#### 0.2 database connection ####
-mars_con <- odbc::dbConnect(drv  = odbc::odbc(),
-                            dsn  = "mars14_data")
+# Create database connection
+mars_con <- dbPool(
+  drv = RPostgres::Postgres(),
+  host = "PWDMARSDBS1",
+  port = 5434,
+  dbname = "mars_prod",
+  user = Sys.getenv("mars_uid"),
+  password = Sys.getenv("mars_pwd"),
+  timezone = NULL
+)
+ 
 
 #### 1.0 Pick SMP, OW, Date range, set storage depth ####
 
@@ -19,28 +28,32 @@ eval_end <- '2025-04-09'
 storage_depth_ft <- 4.07; # Weir depth relative to bottom of stone
 
 # monitoring period
-smp_monitor_data <- marsFetchLevelData(mars_con,
-                                       target_id = smp_id,
-                                       ow_suffix = ow_suffix,
-                                       start_date = eval_start,
-                                       end_date = eval_end,
-                                       sump_correct = TRUE)
+smp_monitor_data <- marsFetchLevelData(
+  mars_con,
+  target_id = smp_id,
+  ow_suffix = ow_suffix,
+  start_date = eval_start,
+  end_date = eval_end,
+  sump_correct = TRUE
+)
 
 # find the dates of the first CWL datapoint and the last CWL datapoint
-first_date <- min(smp_monitor_data$dtime_est) %>% as_date()
-last_date <- max(smp_monitor_data$dtime_est) %>% as_date()
+first_date <- min(smp_monitor_data$dtime) %>% as_date()
+last_date <- max(smp_monitor_data$dtime) %>% as_date()
 
 # get list of events
-smp_events <- marsFetchRainEventData(mars_con,
-                                     source = 'radar',
-                                     target_id = smp_id,
-                                     start_date = first_date,
-                                     end_date = last_date)
+smp_events <- marsFetchRainEventData(
+  mars_con,
+  source = 'radar',
+  target_id = smp_id,
+  start_date = first_date,
+  end_date = last_date
+) 
 
 ##### 1.1 Set save folder/create save folder ####
 
 ## Create a folder if needed
-save_dir<- paste0("output/event_plots_", eval_end) 
+save_dir<- paste0(smp_id, "/output/event_plots_", eval_end) 
 if(dir.exists(save_dir) == FALSE){
   dir.create(save_dir) 
 }
@@ -52,7 +65,7 @@ for(i in 1:length(smp_events$radar_event_uid)){
   # new, truncated functions
   ##### 2.1 Handling potential errors ####
   tryCatch(expr = {plot_x <- marsEventCombinedPlot(con = mars_con,
-                                                   event_date = smp_events$eventdatastart_est[i],
+                                                   event_date = smp_events$eventdatastart[i],
                                                    smp_id = smp_id,
                                                    ow_suffix = ow_suffix,
                                                    source = 'radar',
@@ -79,7 +92,6 @@ for(i in 1:length(smp_events$radar_event_uid)){
   rm(plot_x)
 }
 
-#### 3.0 Disconnect from the Database ####
-mars_con <- odbc::dbConnect(drv  = odbc::odbc(),
-                            dsn  = "mars14_data")
+# Close database connection
+poolClose(mars_con)
 

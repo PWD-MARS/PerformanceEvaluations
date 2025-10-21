@@ -1,4 +1,4 @@
-#### Generate timeseries plots from monitoring data at Parkside 63761
+#### Script to generate timeseries plots from monitoring data at Parkside 63761
 
 #### Setup
 
@@ -37,15 +37,14 @@ plot_ts <-
            key_date_descrips,
            color = "black") {
     
-    # Import monitoring data and create dtime_est col
+    # Import monitoring data 
     smp_monitor_data <- marsFetchLevelData(
       mars_con,
       target_id = smp_id,
       ow_suffix = ow_suffix,
       start_date = eval_start,
       end_date = eval_end,
-      sump_correct = FALSE) %>%
-      mutate(dtime_est = with_tz(dtime, tzone = 'EST'))
+      sump_correct = FALSE) 
     
     # Create vector of key depths
     key_depths <- key_elevs - sys_invert_elev
@@ -54,7 +53,7 @@ plot_ts <-
     ref_depth <- sys_invert_elev - loc_invert_elev
     
     ts <-
-      ggplot(smp_monitor_data, aes(x = dtime_est, y = level_ft - ref_depth)) +
+      ggplot(smp_monitor_data, aes(x = dtime, y = level_ft - ref_depth)) +
       geom_line(color = color) +
       ggtitle(paste0(smp_id, " ", ow_suffix, " Response Plot")) +
       ylab("Water Level (ft)") +
@@ -71,13 +70,14 @@ plot_ts <-
       for (i in 1:length(key_depths)) {
         ts <-
           ts + geom_hline(
+            
             yintercept = key_depths[i],
             color = "black",
             size = 0.4,
             linetype = "dashed"
           ) #+
         # annotate("text",
-        #          x = min(smp_monitor_data$dtime_est)-months(2),
+        #          x = min(smp_monitor_data$dtime)-months(2),
         #          y = key_depths[i] + 0.2,
         #          label = key_elev_descrips[i],
         #          hjust = 0)

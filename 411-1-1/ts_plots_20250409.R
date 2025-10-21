@@ -7,13 +7,20 @@ library(tidyverse)
 library(ggplot2)
 library(pwdgsi)
 library(odbc)
-library(DBI)
+library(pool)
 library(lubridate)
 library(magrittr)
 
 # Create database connection
-mars_con <- odbc::dbConnect(drv  = odbc::odbc(),
-                            dsn  = "mars14_data")
+mars_con <- dbPool(
+  drv = RPostgres::Postgres(),
+  host = "PWDMARSDBS1",
+  port = 5434,
+  dbname = "mars_prod",
+  user = Sys.getenv("mars_uid"),
+  password = Sys.getenv("mars_pwd"),
+  timezone = NULL
+)
 
 # Function to create timeseries plot
 
@@ -21,12 +28,14 @@ plot_ts <- function(smp_id, ow_suffix, eval_start, eval_end, sys_invert_elev,
                     key_elevs, key_elev_descrips, key_dates, key_date_descrips) {
   
   # Import monitoring data
-  smp_monitor_data <- marsFetchLevelData(mars_con,
-                                         target_id = smp_id,
-                                         ow_suffix = ow_suffix,
-                                         start_date = eval_start,
-                                         end_date = eval_end,
-                                         sump_correct = FALSE)
+  smp_monitor_data <- marsFetchLevelData(
+    mars_con,
+    target_id = smp_id,
+    ow_suffix = ow_suffix,
+    
+    start_date = eval_start,
+    end_date = eval_end,
+    sump_correct = FALSE) 
   
   # Create vector of key depths 
   key_depths <- key_elevs - sys_invert_elev
@@ -34,7 +43,7 @@ plot_ts <- function(smp_id, ow_suffix, eval_start, eval_end, sys_invert_elev,
   # Find reference elevation (depth of system invert relative to location invert) 
   ref_depth <- sys_invert_elev - key_elevs[1]
   
-  ts <- ggplot(smp_monitor_data, aes(x = dtime_est, y = level_ft - ref_depth)) + 
+  ts <- ggplot(smp_monitor_data, aes(x = dtime, y = level_ft - ref_depth)) + 
     geom_line(color = "black") + 
     ggtitle(paste0(smp_id, " ", ow_suffix, " Response Plot")) + 
     ylab("Water Level (ft)") + 
@@ -77,7 +86,7 @@ cs1_elevs <- c(47.16, 51.17, 55.12, 59.2)
 cs1_elev_descrips <- c("bottom of CS1", "CS1 dist pipe invert", "top of CS1 weir", "top of CS1")
 cs1_plot <- plot_ts(smp_id, cs1_suffix, eval_start, eval_end, sys_invert_elev, 
                     cs1_elevs, cs1_elev_descrips, key_dates, key_date_descrips)
-ggsave(paste0("output/cs1_ts_", eval_end, ".png"))
+ggsave(paste0(smp_id, "/output/cs1_ts_", eval_end, ".png"))
 
 # CS2
 cs2_suffix <- "CS2"
@@ -85,17 +94,17 @@ cs2_elevs <- c(49.92, 51.75, 59.42)
 cs2_elev_descrips <- c("bottom of CS2", "bottom of manifold", "top of CS2")
 cs2_plot <- plot_ts(smp_id, cs2_suffix, eval_start, eval_end, sys_invert_elev, 
                     cs2_elevs, cs2_elev_descrips, key_dates, key_date_descrips)
-ggsave(paste0("output/cs2_ts_", eval_end, ".png"))
+ggsave(paste0(smp_id, "/output/cs2_ts_", eval_end, ".png"))
 
 # OW2
 ow2_suffix <- "OW2"
 ow2_elevs <- c(49.64, 51.05, 51.75, 59.33)
-ow2_elev_descrips <- c("bottom of OW2", "bottom of stone", "bottom of manifold", "top of OW2")
+ow2_elev_descrips <- c("botto
+m of OW2", "bottom of stone", "bottom of manifold", "top of OW2")
 ow2_plot <- plot_ts(smp_id, ow2_suffix, eval_start, eval_end, sys_invert_elev, 
                     ow2_elevs, ow2_elev_descrips, key_dates, key_date_descrips)
-ggsave(paste0("output/ow2_ts_", eval_end, ".png"))
+ggsave(paste0(smp_id, "/output/ow2_ts_", eval_end, ".png"))
 
-#### 3.0 Disconnect from the Database ####
-mars_con <- odbc::dbConnect(drv  = odbc::odbc(),
-                            dsn  = "mars14_data")
+# Close database connection
+poolClose(mars_con)
 

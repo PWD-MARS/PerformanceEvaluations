@@ -45,8 +45,7 @@ ow_monitor_data <- marsFetchLevelData(mars_con,
                                        start_date = eval_start,
                                        end_date = eval_end,
                                        sump_correct = FALSE) %>%
-  mutate(dtime_est = with_tz(dtime, tzone = "EST"),
-         owlevel_ft = level_ft - ow_sump_depth)
+  mutate(owlevel_ft = level_ft - ow_sump_depth)
 
 # Import CS data
 cs_monitor_data <- marsFetchLevelData(mars_con,
@@ -55,12 +54,11 @@ cs_monitor_data <- marsFetchLevelData(mars_con,
                                       start_date = eval_start,
                                       end_date = eval_end,
                                       sump_correct = FALSE) %>%
-  mutate(dtime_est = with_tz(dtime, tzone = "EST"),
-         cslevel_ft = level_ft - cs_sump_depth)
+  mutate(cslevel_ft = level_ft - cs_sump_depth)
 
 # Combine OW and CS data into single dataframe and select relevant cols
-smp_monitor_data <- right_join(ow_monitor_data, cs_monitor_data, by = 'dtime_est') %>%
-  select(dtime_est, owlevel_ft, cslevel_ft)
+smp_monitor_data <- right_join(ow_monitor_data, cs_monitor_data, by = 'dtime') %>%
+  select(dtime, owlevel_ft, cslevel_ft)
 # Delete OW and CS dataframes
 rm(cs_monitor_data, ow_monitor_data)
 
@@ -72,20 +70,21 @@ smp_metrics <- marsFetchRainEventData(mars_con,
                                      source = 'gage',
                                      start_date = eval_start,
                                      end_date = eval_end) %>%
-  # Convert start and end times to est
-  mutate(eventdatastart_est = with_tz(eventdatastart, tzone = "EST"), 
-         eventdataend_est = with_tz(eventdataend, tzone = "EST"), 
-         # Create empty cols for metrics
-         peak_level_ft_ow = NA, peak_level_ft_cs = NA, overtop = NA, rpsu = NA,
-         period = ifelse(eventdatastart_est < "2024-10-01 00:00:00 EST", "Before 2024-10-01", "On or After 2024-10-01")) %>%
+  
+  mutate(
+    # Create empty cols for metrics
+    peak_level_ft_ow = NA, peak_level_ft_cs = NA, overtop = NA, rpsu = NA,
+    # Add flag for before/after 2024 dry period     
+    period = ifelse(eventdatastart < "2024-10-01 00:00:00 EST", "Before 2024-10-01", "On or After 2024-10-01")) %>%
   # Remove unnecessary cols
-  select(-gage_uid, -eventdatastart, -eventdataend)
+  select(-gage_uid)
+
 
 # Loop through events and calculate metrics
 for(i in 1:length(smp_metrics$gage_event_uid)){
-  event_data_i <- smp_monitor_data %>% filter(between(dtime_est, 
-                                                      smp_metrics$eventdatastart_est[i] - hours(6), 
-                                                      smp_metrics$eventdataend_est[i] + days(1)))
+  event_data_i <- smp_monitor_data %>% filter(between(dtime, 
+                                                      smp_metrics$eventdatastart[i] - hours(6), 
+                                                      smp_metrics$eventdataend[i] + days(1)))
   smp_metrics$peak_level_ft_ow[i] = max(event_data_i$owlevel_ft)
   smp_metrics$peak_level_ft_cs[i] = max(event_data_i$cslevel_ft)
   smp_metrics$overtop[i] = smp_metrics$peak_level_ft_cs[i] > cs_storage_depth_ft
@@ -97,7 +96,7 @@ poolClose(mars_con)
 
 # Save the data #####
 write_csv(x = smp_metrics,
-          paste0("63761/output/metrics_", eval_end, ".csv"))
+          paste0(smp_id, "/output/metrics_", eval_end, ".csv"))
 
 # Plot event depth vs. rpsu 
 ggplot(data = smp_metrics, mapping = aes(x = eventdepth_in, y = rpsu)) + 
@@ -108,7 +107,7 @@ ggplot(data = smp_metrics, mapping = aes(x = eventdepth_in, y = rpsu)) +
   xlab('Rain Event Depth (in)') + 
   ylim(0, 50) + 
   ylab('% Storage Used') 
-ggsave(paste0("63761/output/rpsu_vs_depth_", eval_end, ".png"))
+ggsave(paste0(smp_id,"/output/rpsu_vs_depth_", eval_end, ".png"))
 
 # Recreate plot of event depth vs. rpsu, including color coding for dates before
 # and after 10/1/24
@@ -121,7 +120,7 @@ ggplot(data = smp_metrics, mapping = aes(x = eventdepth_in, y = rpsu, color = pe
   ylim(0, 50) + 
   ylab('% Storage Used') + 
   labs(color = "Period")
-ggsave(paste0("63761/output/rpsu_vs_depth_with_period_", eval_end, ".png"))
+ggsave(paste0(smp_id, "/output/rpsu_vs_depth_with_period_", eval_end, ".png"))
 
 # Calculate median RPSU for storms over 1.5"
 smp_metrics_big_storms <- filter(smp_metrics, eventdepth_in > 1.5)
