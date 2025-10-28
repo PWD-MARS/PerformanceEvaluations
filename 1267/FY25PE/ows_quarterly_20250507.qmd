@@ -13,33 +13,13 @@ library(readxl)
 # Function for reading QAQC files
 read_qaqc <- function(file_path) {
   # Read Final_Import_Site sheet
-  qaqc <- readxl::read_xlsx(file_path,
-                            sheet = "Data", 
-                            # Skip first header column
-                            skip = 1) |>
-    # Not using `Standard Dtime` due to Excel rounding issue
-    rename(dtime = `Dtime Baro`,
-           water_level = `Corrected Water Depth (ft)`) |>
-    # Select only dtime and water level
-    select(dtime, water_level) |>
-    # Make sure tz is correct
-    mutate(dtime = force_tz(dtime, tz = "EST"))
+  qaqc <- readxl::read_xlsx(file_path, sheet = "Final_Import_Site#") |>
+     # Datetime correction when converting from decimal
+    dplyr::mutate(dtime = `Standard Dtime` + lubridate::seconds(1),
+                  dtime = lubridate::floor_date(dtime, "minute")) |>
+    dplyr::select(dtime,  `Corrected Water Depth (ft)`) |>
+    dplyr::rename(cwlevel = `Corrected Water Depth (ft)`)
 }
-```
-
-```{r}
-# Paths to files
-dash2_main <- "\\\\pwdoows\\OOWS\\Watershed Sciences\\GSI Monitoring\\02 GSI Monitoring Sites\\Wissinoming Park_1267\\QAQC\\1267-2-1"
-
-dash2_cs1Files <- list.files(paste(dash2_main, "\\CS1", sep = ""))
-
-dash2_cs1paths <- imap(dash2_main, paste, "\\CS1\\", dash2_cs1Files, sep = "") |> unlist()
-
-dash2_cs2Files <-list.files(paste(dash2_main, "\\CS2", sep = ""))
-
-dash2cs2paths <- imap(dash2_main, paste,"\\CS2\\", dash2_cs2Files, sep = "") |> unlist()
-
-dash2_cs1 <- map_dfr(dash2_cs1paths, read_qaqc)
 ```
 
 ## Import QAQC
