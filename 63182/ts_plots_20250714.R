@@ -117,7 +117,7 @@ key_date_descrips <- c()
 
 # CS1
 cs1_suffix <- 'CS1'
-cs1_elevs <- c(23.78, 25.24, 25.72, 26.06, 30.72, 38.01)
+cs1_elevs <- c(23.78, 25.24, 25.72, 26.06, 30.72, 31.22, 38.01)
 cs1_elev_descrips <-
   c(
     'bottom of CS',
@@ -126,7 +126,7 @@ cs1_elev_descrips <-
     'weir orifice',
     'top of weir',
     'top of stone',
-    "top of CS1 weir"
+    'top of CS1'
   )
 cs1_invert_elev <- cs1_elevs[1]
 cs1_plot <-
@@ -149,9 +149,6 @@ ggsave(paste0(smp_id, '/output/cs1_ts_', eval_end, '.png'))
 # OW1
 ow1_suffix <- "OW1"
 ow1_elevs <- c(24.89, 25.24, 31.22)
-# Note: Bot. of OW1 calculated as 111.98 based on surveyed rim elevation and
-# measured well depth. Changed to 111.7 ft to force CS1 and OW1 water depths to
-# match.
 ow1_elev_descrips <- c('bottom of OW1', 'bottom of stone', 
                        'top of stone')
 ow1_invert_elev <- ow1_elevs[1]
@@ -172,14 +169,11 @@ ow1_plot <-
 ggsave(paste0(smp_id, '/output/ow1_ts_', eval_end, '.png'))
 
 # OW2
-ow2_suffix <- "OW2"
+ow2_suffix <- 'OW2'
 ow2_elevs <- c(25.80, 25.24, 31.22)
-# Note: Bot. of OW1 calculated as 111.98 based on surveyed rim elevation and
-# measured well depth. Changed to 111.7 ft to force CS1 and OW1 water depths to
-# match.
 ow2_elev_descrips <- c('bottom of OW2', 'bottom of stone', 
                        'top of stone')
-ow2_invert_elev <- ow1_elevs[1]
+ow2_invert_elev <- ow2_elevs[1]
 ow2_plot <-
   plot_ts(
     smp_id,
