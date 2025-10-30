@@ -87,6 +87,7 @@ ow_preevent <- ggplot(ow_comb |>
                                 ymd_hms("2025-04-01 00:00:00")
                                 )),
                       aes(x = dtime)) +
+   geom_ribbon(aes(ymin = 0.0, ymax = 0.75), fill = "lightblue", alpha = 0.4)
    # geom_ribbon(aes(ymin = 0, ymax = 3.17), fill = "lightblue", alpha = 0.4) +
   # CS1 water level
   geom_line(aes(y = cs1_cwlevel, color = "CS1 Water Level"),
