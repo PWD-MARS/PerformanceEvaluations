@@ -9,7 +9,7 @@ library(tidyverse)
 library(readxl)
 ```
 
-## Import Level and Rain Data
+### Import Level and Rain Data
 
 ```{r}
 # Read in level data
@@ -23,32 +23,57 @@ rain_data <- read_csv("data/1267-2-1_2024-03-01_to_2025-09-28_rainfall.csv") |>
   mutate(dtime =  force_tz(dtime, tz = "EST"))
 ```
 
+### Key Elevations
+
 ```{r}
-# Adjust for distance between bedding and crate
-ow1_level_q2_corrected <- ow1_level_q2_corrected |>
-  mutate(ow1_cwlevel = cwlevel + 0.25) |> select(-cwlevel)
+cs1_elev <- c(
+  "rim" =  65.16,
+  "top_stone" =  62,
+  "top_weir" = 59.69,
+  "weir_key" = 59,
+  "inflow_inv_15" = 57.48,
+  "outflow_iso_inv_24" = 57.02,
+  "outflow_man_inv_12" = 57.15,
+  "bottom_stone" = 58.50,
+  "bottom_sensor" = 56.06,
+  "bottom_struct" = 56.91)
 
-ow1_level_q1_corrected <- ow1_level_q1_corrected |>
-  mutate(ow1_cwlevel = cwlevel + 0.25) |> select(-cwlevel)
+cs2_elev <- c(
+  "rim" = 64.78,
+  "top_stone" = 62,
+  "top_weir" = 59.93,
+  "inflow_inv_30" = 57.99,
+  "orifice_inv" = 55.86,
+  "inflow_inv_8" = 56.66,
+  "outflow_inv_12" = 56.41,
+  "bottom_stone" = 57.15,
+  "bottom_sensor" = 55.41,
+  "bottom_struct" = 55.18
+)
+```
 
-ow2_level_q1_corrected <- ow2_level_q1_corrected |>
-  mutate(ow2_cwlevel = cwlevel+ 0.25) |> select(-cwlevel)
+```{r}
+# Adjust level for outflow invert to be zero
+cs1_wlvl <- dash2_cs1 |>
+  # Add the difference between outflow and bottom of sensor to water level
+  mutate(cs1_adj_wlvl = water_level + (cs2_elev[["outflow_inv_12"]] - cs1_elev[["bottom_sensor"]])) |>
+  select(dtime, cs1_adj_wlvl)
 
-ow2_level_q2_corrected <- ow2_level_q2_corrected |>
-  mutate(ow2_cwlevel = cwlevel + 0.25) |> select(-cwlevel)
+cs2_wlvl <- dash2_cs2 |>
+  mutate(cs2_adj_wlvl = water_level + (cs2_elev[["outflow_inv_12"]] - cs2_elev[["bottom_sensor"]])) |>
+  select(dtime, cs2_adj_wlvl)
+  
 
 # Combine each OW data into one df
-ow1_comb <- rbind(ow1_level_q1_corrected, ow1_level_q2_corrected)
+dash2_comb <- cs1_wlvl |>
+  left_join(cs2_wlvl, by = join_by(dtime == dtime)) |>
+  na.omit()
 
-ow2_comb <- rbind(ow2_level_q1_corrected, ow2_level_q2_corrected)
 
 # Combine level and rain dfs
-ow_comb <- ow1_comb |>
-  # Combine with ow2
-  left_join(ow2_comb, join_by(dtime == dtime)) |>
-  # Combine with rain data
-  left_join(rain, join_by(dtime == dtime)) |>
-  mutate(rainfall = if_else(is.na(rainfall), 0, rainfall))
+dash2_comb <- dash2_comb |>
+  left_join(rain_data, by = join_by(dtime == dtime))
+
 ```
 
 ```{r}
