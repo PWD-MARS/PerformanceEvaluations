@@ -38,3 +38,6 @@ dash2_cs2 <- map_dfr(dash2_cs2paths, read_qaqc) |> filter(dtime >= lubridate::ym
 # Export to RDS files
 readr::write_rds(dash2_cs1, "1267-2_CS1_level.rds", "xz", compression = 9L)
 readr::write_rds(dash2_cs2, "1267-2_CS2_level.rds", "xz", compression = 9L)
+
+
+# Rain data was downloaded from the shiny app

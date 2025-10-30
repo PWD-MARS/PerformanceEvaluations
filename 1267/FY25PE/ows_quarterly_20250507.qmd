@@ -9,75 +9,18 @@ library(tidyverse)
 library(readxl)
 ```
 
-```{r}
-# Function for reading QAQC files
-read_qaqc <- function(file_path) {
-  # Read Final_Import_Site sheet
-  qaqc <- readxl::read_xlsx(file_path,
-                            # Skip first header column
-                            #skip = 1,
-                            range = "Data!A2:J8832",
-                            col_types = c("date", "date", "numeric",
-                                          "date", "numeric", 
-                                          "numeric","numeric","numeric",
-                                          "numeric", "numeric"
-                                          )) |>
-    # Not using `Standard Dtime` due to Excel rounding issue
-    rename(dtime = `Dtime Baro`,
-           water_level = `Corrected Water Depth (ft)`) |>
-    # Select only dtime and water level
-    select(dtime, water_level) |>
-    # Make sure tz is correct
-    mutate(dtime = force_tz(dtime, tz = "EST"))
-}
-```
+## Import Level and Rain Data
 
 ```{r}
-# Paths to files
-dash2_main <- "\\\\pwdoows\\OOWS\\Watershed Sciences\\GSI Monitoring\\02 GSI Monitoring Sites\\Wissinoming Park_1267\\QAQC\\1267-2-1"
+# Read in level data
+dash2_cs1 <- read_rds("data/1267-2_CS1_level.rds")
+dash2_cs2 <- read_rds("data/1267-2_CS2_level.rds")
 
-dash2_cs1Files <- list.files(paste(dash2_main, "\\CS1", sep = ""))
-
-dash2_cs1paths <- map(dash2_main, paste, "\\CS1\\", dash2_cs1Files, sep = "") |> unlist()
-
-dash2_cs2Files <-list.files(paste(dash2_main, "\\CS2", sep = ""))
-
-dash2cs2paths <- imap(dash2_main, paste,"\\CS2\\", dash2_cs2Files, sep = "") |> unlist()
-
-dash2_cs1 <- map_dfr(dash2_cs1paths, read_qaqc) |> filter(dtime >= lubridate::ymd_hms("2024-03-22 10:15:00", tz = "EST"))
-```
-
-## Import QAQC
-
-```{r}
-# Read OW2 Q1 QAQC file
-ow2_level_q1_corrected <- read_qaqc("data/1140-3-2/OW2/1140-3-2_OW2_25Q1_15min_QAQC_20250710_KR.xlsx")
-
-# Read OW2 Q2 QAQC file
-ow2_level_q2_corrected <- read_qaqc("data/1140-3-2/OW2/1140-3-2_OW2_25Q2_15min_QAQC_20250710_KR.xlsx")
-
-# Read OW1 Q1 QAQC file
-ow1_level_q1_corrected <- read_qaqc("data/1140-3-2/OW1/1140-3-2_OW1_25Q1_15min_QAQC_20250710_KR.xlsx")
-
-# Read OW2 Q2 QAQC file
-ow1_level_q2_corrected <- read_qaqc("data/1140-3-2/OW1/1140-3-2_OW1_25Q2_15min_QAQC_20250710_KR.xlsx")
-
-# Read and combine rain data for both quarters
-rain_q1 <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q1_15min_QAQC_20250710_KR.xlsx",
-             sheet = "Rainfall Data")
-
-rain_q2 <- read_xlsx("data/1140-3-2/OW2/1140-3-2_OW2_25Q2_15min_QAQC_20250710_KR.xlsx",
-             sheet = "Rainfall Data")
-
-# Combine Q1 and Q2 data into one
-rain <- rbind(rain_q1, rain_q2) |>
-  rename(dtime = `DateTime`,
-         rainfall = `Rainfall (in.)`,
-         gauge_uid = `Rain Gauge #`,
-         rain_event_uid = `Rainfall Event ID`) |>
-  # Make sure only one dtime value if overlap
-  distinct(dtime, .keep_all = TRUE)
-
+# Read rainfall CSV
+rain_data <- read_csv("data/1267-2-1_2024-03-01_to_2025-09-28_rainfall.csv") |>
+  select(dtime, rainfall_in) |>
+  # Change time zone without affecting values
+  mutate(dtime =  force_tz(dtime, tz = "EST"))
 ```
 
 ```{r}
