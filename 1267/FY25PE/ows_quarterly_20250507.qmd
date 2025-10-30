@@ -56,22 +56,22 @@ cs2_elev <- c(
 # Adjust level for outflow invert to be zero
 cs1_wlvl <- dash2_cs1 |>
   # Add the difference between outflow and bottom of sensor to water level
-  mutate(cs1_adj_wlvl = water_level + (cs2_elev[["outflow_inv_12"]] - cs1_elev[["bottom_sensor"]])) |>
-  select(dtime, cs1_adj_wlvl)
+  mutate(cs1_cwlevel = water_level + (cs2_elev[["outflow_inv_12"]] - cs1_elev[["bottom_sensor"]])) |>
+  select(dtime, cs1_cwlevel)
 
 cs2_wlvl <- dash2_cs2 |>
-  mutate(cs2_adj_wlvl = water_level + (cs2_elev[["outflow_inv_12"]] - cs2_elev[["bottom_sensor"]])) |>
-  select(dtime, cs2_adj_wlvl)
+  mutate(cs2_cwlevel = water_level + (cs2_elev[["outflow_inv_12"]] - cs2_elev[["bottom_sensor"]])) |>
+  select(dtime, cs2_cwlevel)
   
 
 # Combine each OW data into one df
-dash2_comb <- cs1_wlvl |>
+ow_comb <- cs1_wlvl |>
   left_join(cs2_wlvl, by = join_by(dtime == dtime)) |>
   na.omit()
 
 
 # Combine level and rain dfs
-dash2_comb <- dash2_comb |>
+ow_comb <- ow_comb |>
   left_join(rain_data, by = join_by(dtime == dtime))
 
 ```
@@ -85,21 +85,21 @@ ow_preevent <- ggplot(ow_comb |>
                                 ymd_hms("2025-06-20 6:00:00")
                                 )),
                       aes(x = dtime)) +
-   geom_ribbon(aes(ymin = 0, ymax = 3.17), fill = "lightblue", alpha = 0.4) +
-  # OW1 water level
-  geom_line(aes(y = ow1_cwlevel, color = "OW1 Water Level"),
+   # geom_ribbon(aes(ymin = 0, ymax = 3.17), fill = "lightblue", alpha = 0.4) +
+  # CS1 water level
+  geom_line(aes(y = cs1_cwlevel, color = "CS1 Water Level"),
             linewidth = 1.1) +
-  # OW2 water level
-  geom_line(aes(color = "OW2 Water Level", y = ow2_cwlevel),
+  # CS2 water level
+  geom_line(aes(color = "CS2 Water Level", y = cs2_cwlevel),
             linewidth = 1.1) +
-  # Bottom of crate elevation
-  geom_hline(aes(yintercept = 0.25),
-             linewidth = 0.6,
-             linetype = "dashed")  +
-  annotate("text", x =  ymd_hms("2025-02-25 06:00:00"),
-           y = 0.8, 
-           label = "Bottom of Crate",
-           hjust = 0) +
+  # # Bottom of crate elevation
+  # geom_hline(aes(yintercept = 0.25),
+  #            linewidth = 0.6,
+  #            linetype = "dashed")  +
+  # annotate("text", x =  ymd_hms("2025-02-25 06:00:00"),
+  #          y = 0.8, 
+  #          label = "Bottom of Crate",
+  #          hjust = 0) +
   # Bottom of pipe bedding elevation
   # geom_hline(yintercept = 0.0,
   #            linetype = "dashed") +
@@ -108,45 +108,45 @@ ow_preevent <- ggplot(ow_comb |>
   #          label = "Bottom of pipe bedding",
   #          hjust = 0) +
   # OW2 top of storage elevation
-  geom_hline(yintercept = 3.17, linetype = "dashed") +
-    annotate("text",
-             x =  ymd_hms("2025-02-25 06:00:00"),
-             y = 3.37,
-             label = "Top of Stone Storage",
-             hjust = 0) +
-    geom_hline(yintercept = 0.0) +
-  annotate("text", x =  ymd_hms("2025-02-25 06:00:00"),
-           y = -0.1, 
-           label = "Bottom of Stone Storage",
-           hjust = 0) +
-  # # OW1 top of storage elevation
-  #   geom_hline(yintercept = 4.25, linetype = "dashed") +
+  # geom_hline(yintercept = 3.17, linetype = "dashed") +
   #   annotate("text",
   #            x =  ymd_hms("2025-02-25 06:00:00"),
-  #            y = 4.50, 
-  #            label = "Top of Storage (OW1)",
+  #            y = 3.37,
+  #            label = "Top of Stone Storage",
   #            hjust = 0) +
-  # Zoom level for plot 
-  coord_cartesian(ylim = c(-.5, 4)) +
+  #   geom_hline(yintercept = 0.0) +
+  # annotate("text", x =  ymd_hms("2025-02-25 06:00:00"),
+  #          y = -0.1, 
+  #          label = "Bottom of Stone Storage",
+  #          hjust = 0) +
+  # # # OW1 top of storage elevation
+  # #   geom_hline(yintercept = 4.25, linetype = "dashed") +
+  # #   annotate("text",
+  # #            x =  ymd_hms("2025-02-25 06:00:00"),
+  # #            y = 4.50, 
+  # #            label = "Top of Storage (OW1)",
+  # #            hjust = 0) +
+  # # Zoom level for plot 
+  coord_cartesian(ylim = c(-.5, 6.5)) +
   labs(
     x = "Date",
     y = "Water level (ft)",
     color = NULL,
-    title = "1140-3-2 Water Level Response (15-minute interval)"
+    title = "1267-2-1 Water Level Response (15-minute interval)"
   )  +
   theme(legend.position = "bottom") +
   # Color for water levels
    scale_color_manual(values = c(
-    "OW1 Water Level" = "cornflowerblue",
-    "OW2 Water Level" = "#2a3782")) +
+    "CS1 Water Level" = "cornflowerblue",
+    "CS2 Water Level" = "#2a3782")) +
   # Set y-axis formating to match rain
   scale_y_continuous(labels = function(x) sprintf("%.2f", x))
   
 # Rain plot
 rainfall_pre <- ggplot(ow_comb |>
                          # 3-hour interval to show all events
-                         group_by(hour = lubridate::floor_date(dtime, "3 hour")) |>
-                         summarize(hr_rain = sum(rainfall))|> 
+                         group_by(hour = lubridate::floor_date(dtime, "6 hours")) |>
+                         summarize(hr_rain = sum(rainfall_in))|> 
                          dplyr::filter(
                            between(hour, 
                                 ymd_hms("2025-02-25 06:00:00"),
@@ -154,7 +154,7 @@ rainfall_pre <- ggplot(ow_comb |>
                                 )),
                    aes(y = hr_rain)) +
   geom_col(aes(hour)) + 
-  scale_y_continuous(lim = c(0, 2)) +
+  scale_y_continuous(lim = c(0, 3)) +
   labs(
     x = NULL,
     y = "Rainfall (in)",
