@@ -120,7 +120,7 @@ cs1_plot <- ggplot(ow_comb |>
              linewidth = 0.6,
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms("2025-01-05 06:00:00"),
-           y =  cs1_adj$top_weir + 0.2,
+           y =  cs1_adj$top_weir + 0.3,
            label = "CS1 Top of Weir",
            hjust = 0) +
   # CS1 Weir Key
@@ -128,7 +128,7 @@ cs1_plot <- ggplot(ow_comb |>
              linewidth = 0.6,
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms("2025-01-05 06:00:00"),
-           y =  cs1_adj$weir_key + 0.2,
+           y =  cs1_adj$weir_key + 0.3,
            label = "CS1 Weir Key",
            hjust = 0) +
     # CS1 Top of Stone
@@ -136,7 +136,7 @@ cs1_plot <- ggplot(ow_comb |>
              linewidth = 0.6,
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms("2025-01-05 06:00:00"),
-           y =  cs1_adj$top_stone + 0.2,
+           y =  cs1_adj$top_stone + 0.3,
            label = "CS1 Top of Stone",
            hjust = 0) +
     # CS1 Bottom of Stone
@@ -152,7 +152,7 @@ cs1_plot <- ggplot(ow_comb |>
              linewidth = 0.6,
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms("2025-01-05 06:00:00"),
-           y =  cs1_adj$outflow_iso_inv_24 - 0.2,
+           y =  cs1_adj$outflow_iso_inv_24 - 0.3,
            label = "CS1 ISO Invert",
            hjust = 0) +
   # CS2 Outflow Invert
@@ -160,7 +160,7 @@ cs1_plot <- ggplot(ow_comb |>
          linewidth = 0.6,
          linetype = "dashed")  +
 annotate("text", x =  ymd_hms("2025-03-05 06:00:00"),
-       y =  cs2_adj$outflow_inv_12 + 0.2,
+       y =  cs2_adj$outflow_inv_12 + 0.3,
        label = "CS2 Outflow",
        hjust = 0) +
   coord_cartesian(ylim = c(-.5, 6.5)) +
@@ -168,16 +168,18 @@ annotate("text", x =  ymd_hms("2025-03-05 06:00:00"),
     x = "Date",
     y = "Water level (ft)",
     color = NULL,
-    title = "1267-2-1 Water Level Response (15-minute interval)"
+    title = "1267-2-1 Inflow Water Level Response (15-minute interval)"
   )  +
-  theme(legend.position = "bottom") +
   # Color for water levels
    scale_color_manual(values = c(
     "CS1 Water Level" = "cornflowerblue",
     "CS2 Water Level" = "#2a3782")) +
   # Set y-axis formating to match rain
-  scale_y_continuous(labels = function(x) sprintf("%.2f", x))
+  scale_y_continuous(labels = function(x) sprintf("%.1f", x))
   
+cs1_legend <- cowplot::get_legend(cs1_plot)
+
+cs1_plot <- cs1_plot + theme(legend.position = "none")
 
 cs2_plot <- ggplot(ow_comb |> 
                       dplyr::filter(
@@ -204,7 +206,7 @@ cs2_plot <- ggplot(ow_comb |>
              linewidth = 0.6,
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms("2025-01-05 06:00:00"),
-           y =  cs2_adj$orifice_inv + 0.2,
+           y =  cs2_adj$orifice_inv + 0.3,
            label = "CS2 Orifice",
            hjust = 0) +
     # CS1 Top of Stone
@@ -212,7 +214,7 @@ cs2_plot <- ggplot(ow_comb |>
              linewidth = 0.6,
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms("2025-01-05 06:00:00"),
-           y =  cs2_adj$top_stone + 0.2,
+           y =  cs2_adj$top_stone + 0.3,
            label = "CS2 Top of Stone",
            hjust = 0) +
     # CS1 Bottom of Stone
@@ -229,7 +231,7 @@ cs2_plot <- ggplot(ow_comb |>
          linewidth = 0.6,
          linetype = "dashed")  +
 annotate("text", x =  ymd_hms("2025-03-05 06:00:00"),
-       y =  cs2_adj$outflow_inv_12 + 0.2,
+       y =  cs2_adj$outflow_inv_12 + 0.3,
        label = "CS2 Outflow",
        hjust = 0) +
   coord_cartesian(ylim = c(-.5, 6.5)) +
@@ -237,15 +239,19 @@ annotate("text", x =  ymd_hms("2025-03-05 06:00:00"),
     x = "Date",
     y = "Water level (ft)",
     color = NULL,
-    title = "1267-2-1 Water Level Response (15-minute interval)"
+    title = "1267-2-1 Outflow Water Level Response (15-minute interval)"
   )  +
-  theme(legend.position = "bottom") +
   # Color for water levels
    scale_color_manual(values = c(
     "CS1 Water Level" = "cornflowerblue",
     "CS2 Water Level" = "#2a3782")) +
   # Set y-axis formating to match rain
-  scale_y_continuous(labels = function(x) sprintf("%.2f", x))
+  scale_y_continuous(labels = function(x) sprintf("%.1f", x))
+
+cs2_legend <- cowplot::get_legend(cs2_plot)
+
+cs2_plot <- cs2_plot + theme(legend.position = "none")
+
 
 # Rain plot
 rainfall_pre <- ggplot(ow_comb |>
@@ -263,14 +269,13 @@ rainfall_pre <- ggplot(ow_comb |>
   labs(
     x = NULL,
     y = "Rainfall (in)",
-    title = "1140-3-2 Rainfall (3-hour interval)"
+    title = "1267-2-1 Rainfall (3-hour interval)"
   )
   # Combine into one plot
-cowplot::plot_grid(rainfall_pre, cs1_plot, cs2_plot,
-                   nrow = 3,
-                   rel_heights = c(1,1, 1),
-                   rel_widths = c(1,1, 1)
-                   )
+cowplot::plot_grid(cowplot::plot_grid(rainfall_pre, cs1_plot, cs2_plot,
+                                      cowplot::plot_grid(NULL, cs1_legend, cs2_legend, NULL, ncol = 4),
+                   nrow = 4,
+                   rel_heights = c(.6,1.1,1.1, 0.2)))
 ```
 
 ### Post-orifice
