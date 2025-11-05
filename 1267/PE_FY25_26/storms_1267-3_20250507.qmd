@@ -17,7 +17,7 @@ dash2_cs3 <- read_rds("data/1267-3_CS3_level.rds")
 dash2_cs1 <- read_rds("data/1267-3_CS1_level.rds")
 
 # Read rainfall CSV
-rain_data <- read_csv("data/1267-3-1_2024-03-01_to_2025-09-28_rainfall.csv") |>
+rain_data <- read_csv("data/1267-2-1_2024-03-01_to_2025-09-28_rainfall.csv") |>
   select(dtime, rainfall_in) |>
   # Change time zone without affecting values
   mutate(dtime =  force_tz(dtime, tz = "EST")) 
@@ -32,13 +32,13 @@ adj_elev <- function(val, rel_val) {
 ### Key Elevations
 
 ```{r}
-cs3_elev <- tibble::tibble(
+cs1_elev <- tibble::tibble(
   "rim" = 45.03,
   "top_stone" = 43.17,
   "top_weir" = 43.59,
   "inflow_inv_36" = 40.28,
-  "orifice_inv" = 39.43,
-  "outflow_inv_12" = 37.59,
+  "orifice_inv" = 39.82,
+  "outflow_inv_12" = 37.97,
   "bottom_stone" = 39.67,
   "bottom_sensor" = 36.68,
   "bottom_struct" = 36.41)
@@ -60,7 +60,6 @@ cs3_elev <- tibble::tibble(
   "rim" = 41.71,
   "top_stone" = 43.17,
   "top_weir" = 42.10,
-  "weir_key" = 40.83,
   "inflow_inv_12" = 41.08,
   "outflow_iso_inv" = 39.64,
   "outflow_man_inv" = 39.60,
@@ -148,14 +147,6 @@ cs3_plot <- ggplot(ow_comb |>
            y =  cs3_adj$top_weir + 0.2,
            label = "CS3 Top of Weir",
            hjust = 0) +
-  # CS3 Weir Key
-  geom_hline(aes(yintercept = cs3_adj$weir_key),
-             linewidth = 0.6,
-             linetype = "dashed")  +
-  annotate("text", x =  ymd_hms(pre_dates$cs3_label),
-           y =  cs3_adj$weir_key + 0.2,
-           label = "CS3 Weir Key",
-           hjust = 0) +
     # CS3 Top of Stone
   geom_hline(aes(yintercept = cs3_adj$top_stone),
              linewidth = 0.6,
@@ -231,7 +222,7 @@ cs1_plot <- ggplot(ow_comb |>
              linewidth = 0.6,
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms(pre_dates$cs3_label),
-           y =  cs1_adj$orifice_inv - 0.2,
+           y =  cs1_adj$orifice_inv + 0.2,
            label = "CS1 Orifice",
            hjust = 0) +
     # CS1 Top of Stone
@@ -247,7 +238,7 @@ cs1_plot <- ggplot(ow_comb |>
              linewidth = 0.6,
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms(pre_dates$cs3_label),
-           y =  cs1_adj$bottom_stone + 0.2,
+           y =  cs1_adj$bottom_stone - 0.2,
            label = "CS1 Bottom of Stone (Estimated)",
            hjust = 0) +
 
@@ -256,7 +247,7 @@ cs1_plot <- ggplot(ow_comb |>
          linewidth = 0.6,
          linetype = "dashed")  +
 annotate("text", x =  ymd_hms(pre_dates$cs1_label),
-       y =  cs1_adj$outflow_inv_12 - 0.2,
+       y =  cs1_adj$outflow_inv_12 - 0.25,
        label = "CS1 Outflow",
        hjust = 0) +
   coord_cartesian(ylim = c(-.75, 6.5)) +
@@ -323,14 +314,6 @@ cs3_plot_post <- ggplot(ow_comb |>
   annotate("text", x =  ymd_hms(post_dates$cs3_label),
            y =  cs3_adj$top_weir - 0.2,
            label = "CS3 Top of Weir",
-           hjust = 0) +
-  # CS3 Weir Key
-  geom_hline(aes(yintercept = cs3_adj$weir_key),
-             linewidth = 0.6,
-             linetype = "dashed")  +
-  annotate("text", x =  ymd_hms(post_dates$cs3_label),
-           y =  cs3_adj$weir_key - 0.2,
-           label = "CS3 Weir Key",
            hjust = 0) +
     # CS3 Top of Stone
   geom_hline(aes(yintercept = cs3_adj$top_stone),
@@ -407,7 +390,7 @@ cs1_plot_post <- ggplot(ow_comb |>
              linewidth = 0.6,
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms(post_dates$cs3_label),
-           y =  cs1_adj$orifice_inv - 0.2,
+           y =  cs1_adj$orifice_inv + 0.2,
            label = "CS1 Orifice",
            hjust = 0) +
     # CS3 Top of Stone
@@ -423,7 +406,7 @@ cs1_plot_post <- ggplot(ow_comb |>
              linewidth = 0.6,
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms(post_dates$cs3_label),
-           y =  cs1_adj$bottom_stone + 0.23,
+           y =  cs1_adj$bottom_stone - 0.23,
            label = "CS1 Bottom of Stone (Estimated)",
            hjust = 0) +
 
