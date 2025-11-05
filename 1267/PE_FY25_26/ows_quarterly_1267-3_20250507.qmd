@@ -36,7 +36,6 @@ cs1_elev <- tibble::tibble(
   "rim" = 45.03,
   "top_stone" = 43.17,
   "top_weir" = 43.59,
-
   "inflow_inv_36" = 40.28,
   "orifice_inv" = 39.43,
   "outflow_inv_12" = 37.59,
@@ -325,7 +324,7 @@ cs3_plot <- ggplot(ow_comb |>
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms(post_dates$cs3_label),
            y =  cs3_adj$top_weir - 0.2,
-           label = "cs3 Top of Weir",
+           label = "CS3 Top of Weir",
            hjust = 0) +
   # cs3 Weir Key
   geom_hline(aes(yintercept = cs3_adj$weir_key),
@@ -333,7 +332,7 @@ cs3_plot <- ggplot(ow_comb |>
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms(post_dates$cs3_label),
            y =  cs3_adj$weir_key - 0.2,
-           label = "cs3 Weir Key",
+           label = "CS3 Weir Key",
            hjust = 0) +
     # cs3 Top of Stone
   geom_hline(aes(yintercept = cs3_adj$top_stone),
@@ -341,7 +340,7 @@ cs3_plot <- ggplot(ow_comb |>
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms(post_dates$cs3_label),
            y =  cs3_adj$top_stone + 0.2,
-           label = "cs3 Top of Stone (Estimated)",
+           label = "CS3 Top of Stone (Estimated)",
            hjust = 0) +
     # cs3 Bottom of Stone
   geom_hline(aes(yintercept = cs3_adj$bottom_stone),
@@ -349,15 +348,15 @@ cs3_plot <- ggplot(ow_comb |>
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms(post_dates$cs3_label),
            y =  cs3_adj$bottom_stone - 0.2,
-           label = "cs3 Bottom of Stone (Estimated)",
+           label = "CS3 Bottom of Stone (Estimated)",
            hjust = 0) +
     # cs3 Outflow
-  geom_hline(aes(yintercept = cs3_adj$outflow_iso_inv_24),
+  geom_hline(aes(yintercept = cs3_adj$outflow_iso_inv),
              linewidth = 0.6,
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms(post_dates$cs3_label),
-           y =  cs3_adj$outflow_iso_inv_24 - 0.2,
-           label = "cs3 ISO Invert",
+           y =  cs3_adj$outflow_iso_inv - 0.2,
+           label = "CS3 ISO Invert",
            hjust = 0) +
   # cs1 Outflow Invert
   geom_hline(aes(yintercept = cs1_adj$outflow_inv_12),
@@ -365,7 +364,7 @@ cs3_plot <- ggplot(ow_comb |>
          linetype = "dashed")  +
 annotate("text", x =  ymd_hms(post_dates$cs1_label),
        y =  cs1_adj$outflow_inv_12 + 0.2,
-       label = "cs1 Outflow",
+       label = "CS1 Outflow",
        hjust = 0) +
   coord_cartesian(ylim = c(-.5, 6.5)) +
   labs(
@@ -376,8 +375,8 @@ annotate("text", x =  ymd_hms(post_dates$cs1_label),
   )  +
   # Color for water levels
    scale_color_manual(values = c(
-    "cs3 Water Level" = "cornflowerblue",
-    "cs1 Water Level" = "#2a3782")) +
+    "CS3 Water Level" = "cornflowerblue",
+    "CS1 Water Level" = "#2a3782")) +
   # Set y-axis formating to match rain
   scale_y_continuous(labels = function(x) sprintf("%.1f", x))
   
@@ -395,7 +394,7 @@ cs1_plot <- ggplot(ow_comb |>
    geom_ribbon(aes(ymin = cs1_adj$bottom_stone, ymax = cs1_adj$top_stone), fill = "lightblue", alpha = 0.4) +
    # geom_ribbon(aes(ymin = 0, ymax = 3.17), fill = "lightblue", alpha = 0.4) +
   # cs3 water level
-  geom_line(aes(y = cs1_cwlevel, color = "cs1 Water Level"),
+  geom_line(aes(y = cs1_cwlevel, color = "CS1 Water Level"),
             linewidth = 1.1) +
   # cs3 Weir Height
   geom_hline(aes(yintercept = cs1_adj$top_weir),
@@ -403,7 +402,7 @@ cs1_plot <- ggplot(ow_comb |>
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms(post_dates$cs3_label),
            y =  cs1_adj$top_weir + 0.2,
-           label = "cs1 Top of Weir",
+           label = "CS1 Top of Weir",
            hjust = 0) +
   # cs3 Orifice
   geom_hline(aes(yintercept = cs1_adj$orifice_inv),
@@ -411,7 +410,7 @@ cs1_plot <- ggplot(ow_comb |>
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms(post_dates$cs3_label),
            y =  cs1_adj$orifice_inv - 0.2,
-           label = "cs1 Orifice",
+           label = "CS1 Orifice",
            hjust = 0) +
     # cs3 Top of Stone
   geom_hline(aes(yintercept = cs1_adj$top_stone),
@@ -419,15 +418,15 @@ cs1_plot <- ggplot(ow_comb |>
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms(post_dates$cs3_label),
            y =  cs1_adj$top_stone + 0.2,
-           label = "cs1 Top of Stone",
+           label = "CS1 Top of Stone",
            hjust = 0) +
     # cs3 Bottom of Stone
   geom_hline(aes(yintercept = cs1_adj$bottom_stone),
              linewidth = 0.6,
              linetype = "dashed")  +
   annotate("text", x =  ymd_hms(post_dates$cs3_label),
-           y =  0.5,
-           label = "cs1 Bottom of Stone",
+           y =  cs1_adj$bottom_stone + 0.2,
+           label = "CS1 Bottom of Stone",
            hjust = 0) +
 
   # cs1 Outflow Invert
@@ -435,8 +434,8 @@ cs1_plot <- ggplot(ow_comb |>
          linewidth = 0.6,
          linetype = "dashed")  +
 annotate("text", x =  ymd_hms(post_dates$cs1_label),
-       y =  cs1_adj$outflow_inv_12 + 0.6,
-       label = "cs1 Outflow",
+       y =  cs1_adj$outflow_inv_12 - 0.2,
+       label = "CS1 Outflow",
        hjust = 0) +
   coord_cartesian(ylim = c(-0.75, 6.5)) +
   labs(
@@ -447,8 +446,8 @@ annotate("text", x =  ymd_hms(post_dates$cs1_label),
   )  +
   # Color for water levels
    scale_color_manual(values = c(
-    "cs3 Water Level" = "cornflowerblue",
-    "cs1 Water Level" = "#2a3782")) +
+    "CS3 Water Level" = "cornflowerblue",
+    "CS1 Water Level" = "#2a3782")) +
   # Set y-axis formating to match rain
   scale_y_continuous(labels = function(x) sprintf("%.1f", x))
 
