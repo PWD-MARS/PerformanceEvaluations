@@ -17,7 +17,7 @@ dash2_cs3 <- read_rds("data/1267-3_cs3_level.rds")
 dash2_cs1 <- read_rds("data/1267-3_cs1_level.rds")
 
 # Read rainfall CSV (same for -2 and -3)
-rain_data <- read_csv("data/1267-3-1_2024-03-01_to_2025-09-28_rainfall.csv") |>
+rain_data <- read_csv("data/1267-2-1_2024-03-01_to_2025-09-28_rainfall.csv") |>
   select(dtime, rainfall_in) |>
   # Change time zone without affecting values
   mutate(dtime =  force_tz(dtime, tz = "EST")) 
