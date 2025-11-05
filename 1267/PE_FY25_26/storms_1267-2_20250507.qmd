@@ -160,7 +160,7 @@ cs1_plot <- ggplot(ow_comb |>
            y =  cs1_adj$bottom_stone - 0.2,
            label = "CS1 Bottom of Stone (Estimated)",
            hjust = 0) +
-    # CS1 Outflow
+    # CS1 ISO Outflow
   geom_hline(aes(yintercept = cs1_adj$outflow_iso_inv_24),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -237,6 +237,14 @@ cs2_plot <- ggplot(ow_comb |>
   annotate("text", x =  ymd_hms(pre_dates$cs1_label),
            y =  0.25,
            label = "CS2 Bottom of Stone (Estimated)",
+           hjust = 0) +
+      # CS1 ISO Outflow
+  geom_hline(aes(yintercept = cs1_adj$outflow_iso_inv_24),
+             linewidth = 0.6,
+             linetype = "dashed")  +
+  annotate("text", x =  ymd_hms(pre_dates$cs1_label),
+           y =  cs1_adj$outflow_iso_inv_24 - 0.2,
+           label = "CS1 ISO Invert",
            hjust = 0) +
 
   # CS2 Outflow Invert
@@ -336,7 +344,7 @@ cs1_plot_post <- ggplot(ow_comb |>
            y =  cs1_adj$bottom_stone - 0.2,
            label = "CS1 Bottom of Stone (Estimated)",
            hjust = 0) +
-    # CS1 Outflow
+    # CS1 ISO Outflow
   geom_hline(aes(yintercept = cs1_adj$outflow_iso_inv_24),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -413,6 +421,14 @@ cs2_plot_post <- ggplot(ow_comb |>
   annotate("text", x =  ymd_hms(post_dates$cs1_label),
            y =  0.5,
            label = "CS2 Bottom of Stone",
+           hjust = 0) +
+      # CS1 ISO Outflow
+  geom_hline(aes(yintercept = cs1_adj$outflow_iso_inv_24),
+             linewidth = 0.6,
+             linetype = "dashed")  +
+  annotate("text", x =  ymd_hms(post_dates$cs1_label),
+           y =  cs1_adj$outflow_iso_inv_24 - 0.2,
+           label = "CS1 ISO Invert",
            hjust = 0) +
 
   # CS2 Outflow Invert
