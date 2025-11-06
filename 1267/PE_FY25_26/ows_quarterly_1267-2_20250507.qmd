@@ -24,6 +24,7 @@ rain_data <- read_csv("data/1267-2-1_2024-03-01_to_2025-09-28_rainfall.csv") |>
 ```
 
 ```{r}
+# Adjust elevation value to relative value
 adj_elev <- function(val, rel_val) {
   adjusted = val - rel_val
   }
@@ -115,7 +116,7 @@ ow_comb <- ow_comb |>
 ```
 
 ```{r}
-# OW2 plot before maintenance
+# Plot before maintenance
 cs1_plot <- ggplot(ow_comb |> 
                       dplyr::filter(
                         between(dtime, 
@@ -123,8 +124,8 @@ cs1_plot <- ggplot(ow_comb |>
                                 ymd_hms(pre_dates$end)
                                 )),
                       aes(x = dtime)) +
+  # Shade storage volume
    geom_ribbon(aes(ymin = cs1_adj$bottom_stone, ymax = cs1_adj$top_stone), fill = "lightblue", alpha = 0.4) +
-   # geom_ribbon(aes(ymin = 0, ymax = 3.17), fill = "lightblue", alpha = 0.4) +
   # CS1 water level
   geom_line(aes(y = cs1_cwlevel, color = "CS1 Water Level"),
             linewidth = 1.1) +
@@ -189,11 +190,14 @@ annotate("text", x =  ymd_hms(pre_dates$cs2_label),
     "CS2 Water Level" = "#2a3782")) +
   # Set y-axis formating to match rain
   scale_y_continuous(labels = function(x) sprintf("%.1f", x))
-  
+
+# Get legend to combine with CS2 Plot at bottom of cowplot
 cs1_legend <- cowplot::get_legend(cs1_plot)
 
+# Hide legend in water level plot to save space
 cs1_plot <- cs1_plot + theme(legend.position = "none")
 
+# Plot CS2
 cs2_plot <- ggplot(ow_comb |> 
                       dplyr::filter(
                         between(dtime, 
@@ -201,8 +205,8 @@ cs2_plot <- ggplot(ow_comb |>
                                 ymd_hms(pre_dates$end)
                                 )),
                       aes(x = dtime)) +
+  # Shade storage volume
    geom_ribbon(aes(ymin = cs2_adj$bottom_stone, ymax = cs2_adj$top_stone), fill = "lightblue", alpha = 0.4) +
-   # geom_ribbon(aes(ymin = 0, ymax = 3.17), fill = "lightblue", alpha = 0.4) +
   # CS2 water level
   geom_line(aes(y = cs2_cwlevel, color = "CS2 Water Level"),
             linewidth = 1.1) +
@@ -269,8 +273,10 @@ annotate("text", x =  ymd_hms(pre_dates$cs2_label),
   # Set y-axis formating to match rain
   scale_y_continuous(labels = function(x) sprintf("%.1f", x))
 
+# Get legend to combine later at bottom of cow plot
 cs2_legend <- cowplot::get_legend(cs2_plot)
 
+# Hide legend to save space
 cs2_plot <- cs2_plot + theme(legend.position = "none")
 
 
@@ -278,6 +284,7 @@ cs2_plot <- cs2_plot + theme(legend.position = "none")
 rainfall_pre <- ggplot(ow_comb |>
                          # 3-hour interval to show all events
                          group_by(hour = lubridate::floor_date(dtime, "3 hour")) |>
+                         # Sum rain by hour
                          summarize(hr_rain = sum(rainfall_in))|> 
                          dplyr::filter(
                            between(hour, 
@@ -292,17 +299,24 @@ rainfall_pre <- ggplot(ow_comb |>
     y = "Rainfall (in)",
     title = "1267-2-1 Rainfall (3-hour interval)"
   )
-  # Combine into one plot
-cowplot::plot_grid(cowplot::plot_grid(rainfall_pre, cs1_plot, cs2_plot,
-                                      cowplot::plot_grid(NULL, cs1_legend, cs2_legend, NULL, ncol = 4),
-                   nrow = 4,
-                   rel_heights = c(.6,1.1,1.1, 0.2)))
+  # Combine Rain, CS1, CS2 and legends into one plot
+cowplot::plot_grid(cowplot::plot_grid(rainfall_pre,
+                                      cs1_plot,
+                                      cs2_plot,
+                                      # 4th plot is legend
+                                      cowplot::plot_grid(NULL,
+                                                         cs1_legend,
+                                                         cs2_legend,
+                                                         NULL,
+                                                         ncol = 4),
+                                      nrow = 4,
+                                      rel_heights = c(.6,1.1,1.1, 0.2)))
 ```
 
 ### Post-orifice
 
 ```{r}
-# OW2 plot before maintenance
+# CS1 plot before maintenance
 cs1_plot <- ggplot(ow_comb |> 
                       dplyr::filter(
                         between(dtime, 
@@ -310,8 +324,8 @@ cs1_plot <- ggplot(ow_comb |>
                                 ymd_hms(post_dates$end)
                                 )),
                       aes(x = dtime)) +
+  # Shade storage volume
    geom_ribbon(aes(ymin = cs1_adj$bottom_stone, ymax = cs1_adj$top_stone), fill = "lightblue", alpha = 0.4) +
-   # geom_ribbon(aes(ymin = 0, ymax = 3.17), fill = "lightblue", alpha = 0.4) +
   # CS1 water level
   geom_line(aes(y = cs1_cwlevel, color = "CS1 Water Level"),
             linewidth = 1.1) +
@@ -331,7 +345,7 @@ cs1_plot <- ggplot(ow_comb |>
            y =  cs1_adj$weir_key - 0.2,
            label = "CS1 Weir Key",
            hjust = 0) +
-    # CS1 Top of Stone
+  # CS1 Top of Stone
   geom_hline(aes(yintercept = cs1_adj$top_stone),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -339,7 +353,7 @@ cs1_plot <- ggplot(ow_comb |>
            y =  cs1_adj$top_stone + 0.2,
            label = "CS1 Top of Stone (Estimated)",
            hjust = 0) +
-    # CS1 Bottom of Stone
+  # CS1 Bottom of Stone
   geom_hline(aes(yintercept = cs1_adj$bottom_stone),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -347,7 +361,7 @@ cs1_plot <- ggplot(ow_comb |>
            y =  cs1_adj$bottom_stone - 0.2,
            label = "CS1 Bottom of Stone (Estimated)",
            hjust = 0) +
-    # CS1 ISO Outflow
+  # CS1 ISO Outflow
   geom_hline(aes(yintercept = cs1_adj$outflow_iso_inv_24),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -359,7 +373,7 @@ cs1_plot <- ggplot(ow_comb |>
   geom_hline(aes(yintercept = cs2_adj$outflow_inv_12),
          linewidth = 0.6,
          linetype = "dashed")  +
-annotate("text", x =  ymd_hms(post_dates$cs2_label),
+  annotate("text", x =  ymd_hms(post_dates$cs2_label),
        y =  cs2_adj$outflow_inv_12 + 0.2,
        label = "CS2 Outflow",
        hjust = 0) +
@@ -376,11 +390,14 @@ annotate("text", x =  ymd_hms(post_dates$cs2_label),
     "CS2 Water Level" = "#2a3782")) +
   # Set y-axis formating to match rain
   scale_y_continuous(labels = function(x) sprintf("%.1f", x))
-  
+
+# Save CS1 legend separately to combine later
 cs1_legend <- cowplot::get_legend(cs1_plot)
 
+# Hide legend to save space
 cs1_plot <- cs1_plot + theme(legend.position = "none")
 
+# Plot CS2
 cs2_plot <- ggplot(ow_comb |> 
                       dplyr::filter(
                         between(dtime, 
@@ -388,12 +405,12 @@ cs2_plot <- ggplot(ow_comb |>
                                 ymd_hms(post_dates$end)
                                 )),
                       aes(x = dtime)) +
-   geom_ribbon(aes(ymin = cs2_adj$bottom_stone, ymax = cs2_adj$top_stone), fill = "lightblue", alpha = 0.4) +
-   # geom_ribbon(aes(ymin = 0, ymax = 3.17), fill = "lightblue", alpha = 0.4) +
-  # CS1 water level
+  # Shade Storage Volume
+  geom_ribbon(aes(ymin = cs2_adj$bottom_stone, ymax = cs2_adj$top_stone), fill = "lightblue", alpha = 0.4) +
+  # CS2 water level
   geom_line(aes(y = cs2_cwlevel, color = "CS2 Water Level"),
             linewidth = 1.1) +
-  # CS1 Weir Height
+  # CS2 Weir Height
   geom_hline(aes(yintercept = cs2_adj$top_weir),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -401,7 +418,7 @@ cs2_plot <- ggplot(ow_comb |>
            y =  cs2_adj$top_weir + 0.2,
            label = "CS2 Top of Weir",
            hjust = 0) +
-  # CS1 Orifice
+  # CS2 Orifice
   geom_hline(aes(yintercept = cs2_adj$orifice_inv),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -409,7 +426,7 @@ cs2_plot <- ggplot(ow_comb |>
            y =  cs2_adj$orifice_inv - 0.2,
            label = "CS2 Orifice",
            hjust = 0) +
-    # CS1 Top of Stone
+  # CS2 Top of Stone
   geom_hline(aes(yintercept = cs2_adj$top_stone),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -417,7 +434,7 @@ cs2_plot <- ggplot(ow_comb |>
            y =  cs2_adj$top_stone + 0.2,
            label = "CS2 Top of Stone",
            hjust = 0) +
-    # CS1 Bottom of Stone
+  # CS2 Bottom of Stone
   geom_hline(aes(yintercept = cs2_adj$bottom_stone),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -425,7 +442,7 @@ cs2_plot <- ggplot(ow_comb |>
            y =  0.5,
            label = "CS2 Bottom of Stone",
            hjust = 0) +
-      # CS1 ISO Outflow
+  # CS1 ISO Outflow
   geom_hline(aes(yintercept = cs1_adj$outflow_iso_inv_24),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -456,8 +473,10 @@ annotate("text", x =  ymd_hms(post_dates$cs2_label),
   # Set y-axis formating to match rain
   scale_y_continuous(labels = function(x) sprintf("%.1f", x))
 
+# Get legend to combine later in cow plot
 cs2_legend <- cowplot::get_legend(cs2_plot)
 
+# Hide legend in plot to save space
 cs2_plot <- cs2_plot + theme(legend.position = "none")
 
 
@@ -465,6 +484,7 @@ cs2_plot <- cs2_plot + theme(legend.position = "none")
 rainfall_pre <- ggplot(ow_comb |>
                          # 3-hour interval to show all events
                          group_by(hour = lubridate::floor_date(dtime, "3 hour")) |>
+                         # Sum rainfall by hour
                          summarize(hr_rain = sum(rainfall_in))|> 
                          dplyr::filter(
                            between(hour, 
@@ -480,8 +500,13 @@ rainfall_pre <- ggplot(ow_comb |>
     title = "1267-2-1 Rainfall (3-hour interval)"
   )
   # Combine into one plot
-cowplot::plot_grid(cowplot::plot_grid(rainfall_pre, cs1_plot, cs2_plot,
-                                      cowplot::plot_grid(NULL, cs1_legend, cs2_legend, NULL, ncol = 4),
-                   nrow = 4,
-                   rel_heights = c(.6,1.1,1.1, 0.2)))
+cowplot::plot_grid(cowplot::plot_grid(rainfall_pre,
+                                      cs1_plot,
+                                      cs2_plot,
+                                      cowplot::plot_grid(NULL,
+                                                         cs1_legend,
+                                                         cs2_legend,
+                                                         NULL, ncol = 4),
+                                      nrow = 4,
+                                      rel_heights = c(.6,1.1,1.1, 0.2)))
 ```

@@ -24,6 +24,7 @@ rain_data <- read_csv("data/1267-2-1_2024-03-01_to_2025-09-28_rainfall.csv") |>
 ```
 
 ```{r}
+# Adjust elevation val to relative val
 adj_elev <- function(val, rel_val) {
   adjusted = val - rel_val
   }
@@ -115,7 +116,7 @@ ow_comb <- ow_comb |>
 ```
 
 ```{r}
-# OW2 plot before maintenance
+# CS1 plot before maintenance
 cs1_plot <- ggplot(ow_comb |> 
                       dplyr::filter(
                         between(dtime, 
@@ -123,8 +124,8 @@ cs1_plot <- ggplot(ow_comb |>
                                 ymd_hms(pre_dates$end)
                                 )),
                       aes(x = dtime)) +
+  # Shade storage volume
    geom_ribbon(aes(ymin = cs1_adj$bottom_stone, ymax = cs1_adj$top_stone), fill = "lightblue", alpha = 0.4) +
-   # geom_ribbon(aes(ymin = 0, ymax = 3.17), fill = "lightblue", alpha = 0.4) +
   # CS1 water level
   geom_line(aes(y = cs1_cwlevel, color = "CS1 Water Level"),
             linewidth = 1.1) +
@@ -189,11 +190,14 @@ annotate("text", x =  ymd_hms(pre_dates$cs2_label),
     "CS2 Water Level" = "#2a3782")) +
   # Set y-axis formating to match rain
   scale_y_continuous(labels = function(x) sprintf("%.1f", x))
-  
+
+# Get legend to add to cowplot
 cs1_legend <- cowplot::get_legend(cs1_plot)
 
+# Hide legend to save space
 cs1_plot <- cs1_plot + theme(legend.position = "none")
 
+# CS2 plot
 cs2_plot <- ggplot(ow_comb |> 
                       dplyr::filter(
                         between(dtime, 
@@ -201,8 +205,8 @@ cs2_plot <- ggplot(ow_comb |>
                                 ymd_hms(pre_dates$end)
                                 )),
                       aes(x = dtime)) +
+  # Shade storage volume
    geom_ribbon(aes(ymin = cs2_adj$bottom_stone, ymax = cs2_adj$top_stone), fill = "lightblue", alpha = 0.4) +
-   # geom_ribbon(aes(ymin = 0, ymax = 3.17), fill = "lightblue", alpha = 0.4) +
   # CS2 water level
   geom_line(aes(y = cs2_cwlevel, color = "CS2 Water Level"),
             linewidth = 1.1) +
@@ -269,8 +273,10 @@ annotate("text", x =  ymd_hms(pre_dates$cs2_label),
   # Set y-axis formating to match rain
   scale_y_continuous(labels = function(x) sprintf("%.1f", x))
 
+# Get legend to add to cowplot
 cs2_legend <- cowplot::get_legend(cs2_plot)
 
+# Hide legend to save space
 cs2_plot <- cs2_plot + theme(legend.position = "none")
 
 
@@ -290,8 +296,15 @@ rainfall_pre <- ggplot(ow_comb |>
     title = "1267-2-1 Rainfall from 2025-03-05 Storm (1.34\")"
   )
   # Combine into one plot
-cowplot::plot_grid(cowplot::plot_grid(rainfall_pre, cs1_plot, cs2_plot,
-                                      cowplot::plot_grid(NULL, cs1_legend, cs2_legend, NULL, ncol = 4),
+cowplot::plot_grid(cowplot::plot_grid(rainfall_pre,
+                                      cs1_plot,
+                                      cs2_plot,
+                                      # Legend as 4th row
+                                      cowplot::plot_grid(NULL,
+                                                         cs1_legend,
+                                                         cs2_legend, 
+                                                         NULL, 
+                                                         ncol = 4),
                    nrow = 4,
                    rel_heights = c(.6,1.1,1.1, 0.2)))
 ```
@@ -299,7 +312,7 @@ cowplot::plot_grid(cowplot::plot_grid(rainfall_pre, cs1_plot, cs2_plot,
 ### Post-orifice
 
 ```{r}
-# OW2 plot before maintenance
+# CS1 plot before maintenance
 cs1_plot_post <- ggplot(ow_comb |> 
                       dplyr::filter(
                         between(dtime, 
@@ -308,7 +321,6 @@ cs1_plot_post <- ggplot(ow_comb |>
                                 )),
                       aes(x = dtime)) +
    geom_ribbon(aes(ymin = cs1_adj$bottom_stone, ymax = cs1_adj$top_stone), fill = "lightblue", alpha = 0.4) +
-   # geom_ribbon(aes(ymin = 0, ymax = 3.17), fill = "lightblue", alpha = 0.4) +
   # CS1 water level
   geom_line(aes(y = cs1_cwlevel, color = "CS1 Water Level"),
             linewidth = 1.1) +
@@ -378,6 +390,7 @@ cs1_legend_post <- cowplot::get_legend(cs1_plot_post)
 
 cs1_plot_post <- cs1_plot_post + theme(legend.position = "none")
 
+# CS2 plot
 cs2_plot_post <- ggplot(ow_comb |> 
                       dplyr::filter(
                         between(dtime, 
@@ -386,7 +399,7 @@ cs2_plot_post <- ggplot(ow_comb |>
                                 )),
                       aes(x = dtime)) +
    geom_ribbon(aes(ymin = cs2_adj$bottom_stone, ymax = cs2_adj$top_stone), fill = "lightblue", alpha = 0.4) +
-   # geom_ribbon(aes(ymin = 0, ymax = 3.17), fill = "lightblue", alpha = 0.4) +
+
   # CS1 water level
   geom_line(aes(y = cs2_cwlevel, color = "CS2 Water Level"),
             linewidth = 1.1) +

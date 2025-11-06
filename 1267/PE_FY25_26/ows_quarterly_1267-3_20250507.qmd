@@ -24,6 +24,7 @@ rain_data <- read_csv("data/1267-2-1_2024-03-01_to_2025-09-28_rainfall.csv") |>
 ```
 
 ```{r}
+# Adjust elevation val to relative val
 adj_elev <- function(val, rel_val) {
   adjusted = val - rel_val
   }
@@ -42,19 +43,6 @@ cs1_elev <- tibble::tibble(
   "bottom_stone" = 39.67,
   "bottom_sensor" = 36.68,
   "bottom_struct" = 36.41)
-
-
-# cs1_elev <- tibble::tibble(
-#   "rim" = 45.80,
-#   "top_stone" = 43.17,
-#   "top_weir" = 42.84,
-#   "inflow_inv_24" = 40.18,
-#   "outflow_iso_inv" = 40.28,
-#   "outflow_man_inv" = 40.32,
-#   "bottom_stone" = 38.50,
-#   "bottom_sensor" = 39.22,
-#   "bottom_struct" = 30.90
-# )
 
 cs3_elev <- tibble::tibble(
   "rim" = 47.71,
@@ -86,31 +74,31 @@ post_dates <- tibble::tibble(
 #### Adjust evaluations
 
 ```{r}
-# Adjust cs3 elevations to cs1's bottom of stone 
+# Adjust CS3 elevations to from bottom of struct to CS1's bottom of stone 
 cs3_adj <- 
   cs3_elev |>
   # Adjust for bottom of stone 
   mutate(across(everything(), ~ adj_elev(.x, cs1_elev[["outflow_inv_12"]])))
 
-# Adjust cs3 elevations to bottom of stone
+# Adjust CS1 elevations to from bottom of struct to bottom of stone 
 cs1_adj <-
   cs1_elev |>
   mutate(across(everything(), ~ adj_elev(.x, cs1_elev[["outflow_inv_12"]])))
 
 
-# Adjust cs3 water level to cs1 bottom of stone
+# Adjust CS3 water level to CS1 bottom of stone
 cs3_wlvl_adj <- 
   dash2_cs3 |>
   mutate(cs3_cwlevel = water_level - (cs1_elev[["outflow_inv_12"]]- cs3_elev[["bottom_struct"]]))
 
-# Adjust cs1 water level 
+# Adjust CS1 water level to bottom of stone
 cs1_wlvl_adj <-
   dash2_cs1 |>
   mutate(cs1_cwlevel = adj_elev(water_level, cs1_adj[["outflow_inv_12"]]- cs1_adj[["bottom_struct"]]))
 ```
 
 ```{r}
-# Combine each OW data into one df
+# Combine each CS data into one df
 ow_comb <- cs3_wlvl_adj |>
   left_join(cs1_wlvl_adj, by = join_by(dtime == dtime)) |>
   na.omit()
@@ -125,7 +113,7 @@ ow_comb <- ow_comb |>
 ```
 
 ```{r}
-# OW2 plot before maintenance
+# CS3 plot before maintenance
 cs3_plot <- ggplot(ow_comb |> 
                       dplyr::filter(
                         between(dtime, 
@@ -133,12 +121,12 @@ cs3_plot <- ggplot(ow_comb |>
                                 ymd_hms(pre_dates$end)
                                 )),
                       aes(x = dtime)) +
+  # Shade storage volume
    geom_ribbon(aes(ymin = cs3_adj$bottom_stone, ymax = cs3_adj$top_stone), fill = "lightblue", alpha = 0.4) +
-   # geom_ribbon(aes(ymin = 0, ymax = 3.17), fill = "lightblue", alpha = 0.4) +
-  # cs3 water level
+  # CS3 water level
   geom_line(aes(y = cs3_cwlevel, color = "CS3 Water Level"),
             linewidth = 1.1) +
-  # cs3 Weir Height
+  # CS3 Weir Height
   geom_hline(aes(yintercept = cs3_adj$top_weir),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -146,7 +134,7 @@ cs3_plot <- ggplot(ow_comb |>
            y =  cs3_adj$top_weir + 0.2,
            label = "CS3 Top of Weir",
            hjust = 0) +
-    # cs3 Top of Stone
+    # CS3 Top of Stone
   geom_hline(aes(yintercept = cs3_adj$top_stone),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -154,7 +142,7 @@ cs3_plot <- ggplot(ow_comb |>
            y =  cs3_adj$top_stone + 0.2,
            label = "CS3 Top of Stone (Estimated)",
            hjust = 0) +
-    # cs3 Bottom of Stone
+    # CS3 Bottom of Stone
   geom_hline(aes(yintercept = cs3_adj$bottom_stone),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -162,7 +150,7 @@ cs3_plot <- ggplot(ow_comb |>
            y =  cs3_adj$bottom_stone - 0.2,
            label = "CS3 Bottom of Stone (Estimated)",
            hjust = 0) +
-    # cs3 Outflow
+    # CS3 Outflow
   geom_hline(aes(yintercept = cs3_adj$outflow_iso_inv),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -170,7 +158,7 @@ cs3_plot <- ggplot(ow_comb |>
            y =  cs3_adj$outflow_iso_inv - 0.2,
            label = "CS3 ISO Invert",
            hjust = 0) +
-  # cs1 Outflow Invert
+  # CS1 Outflow Invert
   geom_hline(aes(yintercept = cs1_adj$outflow_inv_12),
          linewidth = 0.6,
          linetype = "dashed")  +
@@ -191,11 +179,14 @@ annotate("text", x =  ymd_hms(pre_dates$cs1_label),
     "CS1 Water Level" = "#2a3782")) +
   # Set y-axis formating to match rain
   scale_y_continuous(labels = function(x) sprintf("%.1f", x))
-  
+
+# Get legend to add to cowplot later
 cs3_legend <- cowplot::get_legend(cs3_plot)
 
+# Hide legend tos space space
 cs3_plot <- cs3_plot + theme(legend.position = "none")
 
+# CS1 Plot
 cs1_plot <- ggplot(ow_comb |> 
                       dplyr::filter(
                         between(dtime, 
@@ -203,12 +194,12 @@ cs1_plot <- ggplot(ow_comb |>
                                 ymd_hms(pre_dates$end)
                                 )),
                       aes(x = dtime)) +
+  # Shade storage volume
    geom_ribbon(aes(ymin = cs1_adj$bottom_stone, ymax = cs1_adj$top_stone), fill = "lightblue", alpha = 0.4) +
-   # geom_ribbon(aes(ymin = 0, ymax = 3.17), fill = "lightblue", alpha = 0.4) +
-  # cs1 water level
+  # CS1 water level
   geom_line(aes(y = cs1_cwlevel, color = "CS1 Water Level"),
             linewidth = 1.1) +
-  # cs1 Weir Height
+  # CS1 Weir Height
   geom_hline(aes(yintercept = cs1_adj$top_weir),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -216,7 +207,7 @@ cs1_plot <- ggplot(ow_comb |>
            y =  cs1_adj$top_weir + 0.2,
            label = "CS1 Top of Weir",
            hjust = 0) +
-  # cs1 Orifice
+  # CS1 Orifice
   geom_hline(aes(yintercept = cs1_adj$orifice_inv),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -224,7 +215,7 @@ cs1_plot <- ggplot(ow_comb |>
            y =  cs1_adj$orifice_inv + 0.2,
            label = "CS1 Orifice",
            hjust = 0) +
-    # cs1 Top of Stone
+    # CS1 Top of Stone
   geom_hline(aes(yintercept = cs1_adj$top_stone),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -232,7 +223,7 @@ cs1_plot <- ggplot(ow_comb |>
            y =  cs1_adj$top_stone + 0.2,
            label = "CS1 Top of Stone (Estimated)",
            hjust = 0) +
-    # cs1 Bottom of Stone
+    # CS1 Bottom of Stone
   geom_hline(aes(yintercept = cs1_adj$bottom_stone),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -241,7 +232,7 @@ cs1_plot <- ggplot(ow_comb |>
            label = "CS1 Bottom of Stone (Estimated)",
            hjust = 0) +
 
-  # cs1 Outflow Invert
+  # CS1 Outflow Invert
   geom_hline(aes(yintercept = cs1_adj$outflow_inv_12),
          linewidth = 0.6,
          linetype = "dashed")  +
@@ -263,8 +254,10 @@ annotate("text", x =  ymd_hms(pre_dates$cs1_label),
   # Set y-axis formating to match rain
   scale_y_continuous(labels = function(x) sprintf("%.1f", x))
 
+# Get legend for adding to cowplot
 cs1_legend <- cowplot::get_legend(cs1_plot)
 
+# Hide legend to save space
 cs1_plot <- cs1_plot + theme(legend.position = "none")
 
 
@@ -272,6 +265,7 @@ cs1_plot <- cs1_plot + theme(legend.position = "none")
 rainfall_pre <- ggplot(ow_comb |>
                          # 3-hour interval to show all events
                          group_by(hour = lubridate::floor_date(dtime, "3 hour")) |>
+                         # Sum 3-hour rain
                          summarize(hr_rain = sum(rainfall_in))|> 
                          dplyr::filter(
                            between(hour, 
@@ -287,16 +281,22 @@ rainfall_pre <- ggplot(ow_comb |>
     title = "1267-3-1 Rainfall (3-hour interval)"
   )
   # Combine into one plot
-cowplot::plot_grid(cowplot::plot_grid(rainfall_pre, cs3_plot, cs1_plot,
-                                      cowplot::plot_grid(NULL, cs3_legend, cs1_legend, NULL, ncol = 4),
-                   nrow = 4,
-                   rel_heights = c(.6,1.1,1.1, 0.2)))
+cowplot::plot_grid(cowplot::plot_grid(rainfall_pre,
+                                      cs3_plot,
+                                      cs1_plot,
+                                      cowplot::plot_grid(NULL,
+                                                         cs3_legend, 
+                                                         cs1_legend,
+                                                         NULL,
+                                                         ncol = 4),
+                                      nrow = 4,
+                                      rel_heights = c(.6,1.1,1.1, 0.2)))
 ```
 
 ### Post-orifice
 
 ```{r}
-# OW2 plot before maintenance
+# CS3 plot before maintenance
 cs3_plot <- ggplot(ow_comb |> 
                       dplyr::filter(
                         between(dtime, 
@@ -305,11 +305,10 @@ cs3_plot <- ggplot(ow_comb |>
                                 )),
                       aes(x = dtime)) +
    geom_ribbon(aes(ymin = cs3_adj$bottom_stone, ymax = cs3_adj$top_stone), fill = "lightblue", alpha = 0.4) +
-   # geom_ribbon(aes(ymin = 0, ymax = 3.17), fill = "lightblue", alpha = 0.4) +
-  # cs3 water level
+  # CS3 water level
   geom_line(aes(y = cs3_cwlevel, color = "CS3 Water Level"),
             linewidth = 1.1) +
-  # cs3 Weir Height
+  # CS3 Weir Height
   geom_hline(aes(yintercept = cs3_adj$top_weir),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -317,7 +316,7 @@ cs3_plot <- ggplot(ow_comb |>
            y =  cs3_adj$top_weir - 0.2,
            label = "CS3 Top of Weir",
            hjust = 0) +
-    # cs3 Top of Stone
+    # CS3 Top of Stone
   geom_hline(aes(yintercept = cs3_adj$top_stone),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -325,7 +324,7 @@ cs3_plot <- ggplot(ow_comb |>
            y =  cs3_adj$top_stone + 0.2,
            label = "CS3 Top of Stone (Estimated)",
            hjust = 0) +
-    # cs3 Bottom of Stone
+    # CS3 Bottom of Stone
   geom_hline(aes(yintercept = cs3_adj$bottom_stone),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -333,7 +332,7 @@ cs3_plot <- ggplot(ow_comb |>
            y =  cs3_adj$bottom_stone - 0.2,
            label = "CS3 Bottom of Stone (Estimated)",
            hjust = 0) +
-    # cs3 Outflow
+    # CS3 Outflow
   geom_hline(aes(yintercept = cs3_adj$outflow_iso_inv),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -341,7 +340,7 @@ cs3_plot <- ggplot(ow_comb |>
            y =  cs3_adj$outflow_iso_inv - 0.2,
            label = "CS3 ISO Invert",
            hjust = 0) +
-  # cs1 Outflow Invert
+  # CS1 Outflow Invert
   geom_hline(aes(yintercept = cs1_adj$outflow_inv_12),
          linewidth = 0.6,
          linetype = "dashed")  +
@@ -375,11 +374,10 @@ cs1_plot <- ggplot(ow_comb |>
                                 )),
                       aes(x = dtime)) +
    geom_ribbon(aes(ymin = cs1_adj$bottom_stone, ymax = cs1_adj$top_stone), fill = "lightblue", alpha = 0.4) +
-   # geom_ribbon(aes(ymin = 0, ymax = 3.17), fill = "lightblue", alpha = 0.4) +
-  # cs3 water level
+  # CS3 water level
   geom_line(aes(y = cs1_cwlevel, color = "CS1 Water Level"),
             linewidth = 1.1) +
-  # cs3 Weir Height
+  # CS3 Weir Height
   geom_hline(aes(yintercept = cs1_adj$top_weir),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -387,7 +385,7 @@ cs1_plot <- ggplot(ow_comb |>
            y =  cs1_adj$top_weir + 0.2,
            label = "CS1 Top of Weir",
            hjust = 0) +
-  # cs3 Orifice
+  # CS3 Orifice
   geom_hline(aes(yintercept = cs1_adj$orifice_inv),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -395,7 +393,7 @@ cs1_plot <- ggplot(ow_comb |>
            y =  cs1_adj$orifice_inv + 0.2,
            label = "CS1 Orifice",
            hjust = 0) +
-    # cs3 Top of Stone
+    # CS3 Top of Stone
   geom_hline(aes(yintercept = cs1_adj$top_stone),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -403,7 +401,7 @@ cs1_plot <- ggplot(ow_comb |>
            y =  cs1_adj$top_stone + 0.2,
            label = "CS1 Top of Stone",
            hjust = 0) +
-    # cs3 Bottom of Stone
+    # CS3 Bottom of Stone
   geom_hline(aes(yintercept = cs1_adj$bottom_stone),
              linewidth = 0.6,
              linetype = "dashed")  +
@@ -412,7 +410,7 @@ cs1_plot <- ggplot(ow_comb |>
            label = "CS1 Bottom of Stone",
            hjust = 0) +
 
-  # cs1 Outflow Invert
+  # CS1 Outflow Invert
   geom_hline(aes(yintercept = cs1_adj$outflow_inv_12),
          linewidth = 0.6,
          linetype = "dashed")  +
@@ -458,8 +456,14 @@ rainfall_pre <- ggplot(ow_comb |>
     title = "1267-3-1 Rainfall (3-hour interval)"
   )
   # Combine into one plot
-cowplot::plot_grid(cowplot::plot_grid(rainfall_pre, cs3_plot, cs1_plot,
-                                      cowplot::plot_grid(NULL, cs3_legend, cs1_legend, NULL, ncol = 4),
-                   nrow = 4,
-                   rel_heights = c(.6,1.1,1.1, 0.2)))
+cowplot::plot_grid(cowplot::plot_grid(rainfall_pre,
+                                      cs3_plot,
+                                      cs1_plot,
+                                      cowplot::plot_grid(NULL,
+                                                         cs3_legend,
+                                                         cs1_legend,
+                                                         NULL,
+                                                         ncol = 4),
+                                      nrow = 4,
+                                      rel_heights = c(.6,1.1,1.1, 0.2)))
 ```
