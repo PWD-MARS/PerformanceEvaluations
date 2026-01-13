@@ -31,8 +31,8 @@ key_elevs <-
   c(
     23.78,
     25.24,
-    24.89,
-    25.8,
+    25.51,
+    25.51,
     25.72,
     26.06,
     30.72,
@@ -83,11 +83,11 @@ ow1_monitor_data <- marsFetchLevelData(mars_con,
 # Import OW1 monitoring data for full monitoring period
 ow2_monitor_data <- marsFetchLevelData(mars_con,
                                        target_id = smp_id,
-                                       ow_suffix = 'OW1',
+                                       ow_suffix = 'OW2',
                                        start_date = eval_start,
                                        end_date = eval_end,
                                        sump_correct = FALSE) %>%
-  mutate(ow2level_ft = level_ft - ow2_ref_depth)
+  mutate(ow2level_ft = level_ft - ow2_ref_depth - 0.2) #0.2 correction factor to line up OW1 and OW2 data
 
 # Import rainfall data for full monitoring period
 rain_data <- marsFetchRainfallData(
@@ -121,7 +121,7 @@ for(i in 1:length(event_data$gage_event_uid)) {
   # Subset monitoring data
   full_data_i <- full_data %>%
     filter(dtime >= event_data$eventdatastart[i] - hours(6) & 
-             dtime <= event_data$eventdataend[i] + days(1))
+             dtime <= event_data$eventdataend[i] + days(3))
   # If no data, skip
   if (nrow(full_data_i) == 0) {
     next
@@ -148,25 +148,25 @@ for(i in 1:length(event_data$gage_event_uid)) {
       breaks = scales::breaks_width(1),
       labels = scales::number_format(accuracy = 0.1)
     ) +
-    scale_x_datetime(date_breaks = "12 hours", minor_breaks = "6 hours") +
+    scale_x_datetime(date_breaks = "24 hours", minor_breaks = "12 hours") +
     labs(color = "Location")
   if (length(key_depths) > 0 & length(key_elev_descrips) > 0) {
-    for(j in c(2, 3, 5, 7, 8)){
+    for(j in c(2, 5, 7, 8)){
       wl_ts <-
         wl_ts + geom_hline(
           yintercept = key_depths[j],
           color = "black",
           size = 0.4,
           linetype = "dashed"
-        ) # +
-      # annotate(
-      #   "text",
-      #   size = unit(2.6, 'pt'),
-      #   x = event_data$eventdataend + days(1),
-      #   y = key_depths[j] + 0.05,
-      #   label = key_elev_descrips[j],
-      #   hjust = 1
-      # )
+        ) +
+      annotate(
+        "text",
+        size = unit(2.6, 'pt'),
+        x = full_data_i$dtime[1]+days(1),
+        y = key_depths[j] + 0.05,
+        label = key_elev_descrips[j],
+        hjust = 1
+      )
     }
   }
   # Create rainfall plot

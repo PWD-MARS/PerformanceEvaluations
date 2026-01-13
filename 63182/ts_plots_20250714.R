@@ -35,7 +35,8 @@ plot_ts <-
            key_elev_descrips,
            key_dates,
            key_date_descrips,
-           color = "black") {
+           color = "black", 
+           adjustment = 0) {
     
     # Import monitoring data 
     smp_monitor_data <- marsFetchLevelData(
@@ -53,8 +54,9 @@ plot_ts <-
     ref_depth <- sys_invert_elev - loc_invert_elev
     
     ts <-
-      ggplot(smp_monitor_data, aes(x = dtime, y = level_ft - ref_depth)) +
-      geom_line(color = color) +
+      ggplot(smp_monitor_data, aes(x = dtime, y = level_ft - ref_depth + adjustment)) +
+      #geom_line(color = color) +
+      geom_point(color = color, size = 0.5) + 
       ggtitle(paste0(smp_id, " ", ow_suffix, " Response Plot")) +
       ylab("Water Level (ft)") +
       xlab("Date") +
@@ -148,9 +150,9 @@ ggsave(paste0(smp_id, '/output/cs1_ts_', eval_end, '.png'))
 
 # OW1
 ow1_suffix <- "OW1"
-ow1_elevs <- c(24.89, 25.24, 31.22)
+ow1_elevs <- c(25.51, 25.24, 31.22, 39.01)
 ow1_elev_descrips <- c('bottom of OW1', 'bottom of stone', 
-                       'top of stone')
+                       'top of stone', 'top of OW1')
 ow1_invert_elev <- ow1_elevs[1]
 ow1_plot <-
   plot_ts(
@@ -164,15 +166,15 @@ ow1_plot <-
     ow1_elev_descrips,
     key_dates,
     key_date_descrips,
-    "dodgerblue"
+    "dodgerblue", 
   )
 ggsave(paste0(smp_id, '/output/ow1_ts_', eval_end, '.png'))
 
 # OW2
 ow2_suffix <- 'OW2'
-ow2_elevs <- c(25.80, 25.24, 31.22)
+ow2_elevs <- c(25.51, 25.24, 31.22, 35.14)
 ow2_elev_descrips <- c('bottom of OW2', 'bottom of stone', 
-                       'top of stone')
+                       'top of stone', 'top of OW2')
 ow2_invert_elev <- ow2_elevs[1]
 ow2_plot <-
   plot_ts(
@@ -186,7 +188,8 @@ ow2_plot <-
     ow2_elev_descrips,
     key_dates,
     key_date_descrips,
-    "dodgerblue"
+    "purple",
+    adjustment = -.2
   )
 ggsave(paste0(smp_id, '/output/ow2_ts_', eval_end, '.png'))
 

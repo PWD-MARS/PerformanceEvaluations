@@ -1,4 +1,4 @@
-#### Script to generate metrics table for full monitoring period at Parkside 63761
+#### Script to generate metrics table for full monitoring period at Dependable Site 99 63182
 
 #### Setup
 
@@ -32,10 +32,7 @@ eval_start <- '2018-05-01'
 eval_end <- '2025-07-14'
 ow_storage_depth_ft <- 5.98 # Top of stone relative to bottom of stone
 cs_storage_depth_ft <- 5.48 # Weir depth relative to bottom of stone
-ow_sump_depth <- 0.35 # Bottom of stone relative to bottom of OW1
-# Note: OW sump depth calculated as -0.48 based on surveyed rim elevation,
-# bottom of stone elevation, and measured well depth. Changed to -0.2 ft to
-# force CS1 and OW1 water depths to match.
+ow_sump_depth <- -0.27 # Bottom of stone relative to bottom of OW1
 cs_sump_depth <- 1.46 # Bottom of stone relative to bottom of CS
 
 # Import OW data
@@ -57,7 +54,7 @@ cs_monitor_data <- marsFetchLevelData(mars_con,
   mutate(cslevel_ft = level_ft - cs_sump_depth)
 
 # Combine OW and CS data into single dataframe and select relevant cols
-smp_monitor_data <- full_join(ow_monitor_data, cs_monitor_data, by = 'dtime') %>%
+smp_monitor_data <- inner_join(ow_monitor_data, cs_monitor_data, by = 'dtime') %>%
   select(dtime, owlevel_ft, cslevel_ft)
 # Delete OW and CS dataframes
 rm(cs_monitor_data, ow_monitor_data)
@@ -73,21 +70,29 @@ smp_metrics <- marsFetchRainEventData(mars_con,
   
   mutate(
     # Create empty cols for metrics
-    peak_level_ft_ow = NA, peak_level_ft_cs = NA, overtop = NA, rpsu = NA) %>%
+    peak_level_ft_ow = NA, peak_level_ft_cs = NA, overtop = NA, rpsu = NA, have_data = NA) %>%
     # Remove unnecessary cols
     select(-gage_uid)
 
 
 # Loop through events and calculate metrics
+
 for(i in 1:length(smp_metrics$gage_event_uid)){
   event_data_i <- smp_monitor_data %>% filter(between(dtime, 
                                                       smp_metrics$eventdatastart[i] - hours(6), 
                                                       smp_metrics$eventdataend[i] + days(1)))
-  smp_metrics$peak_level_ft_ow[i] = max(event_data_i$owlevel_ft)
-  smp_metrics$peak_level_ft_cs[i] = max(event_data_i$cslevel_ft)
-  smp_metrics$overtop[i] = smp_metrics$peak_level_ft_cs[i] > cs_storage_depth_ft
-  smp_metrics$rpsu[i] = smp_metrics$peak_level_ft_ow[i] / ow_storage_depth_ft * 100
+  if (nrow(event_data_i) > 0){
+    smp_metrics$peak_level_ft_ow[i] = max(event_data_i$owlevel_ft)
+    smp_metrics$peak_level_ft_cs[i] = max(event_data_i$cslevel_ft)
+    smp_metrics$overtop[i] = smp_metrics$peak_level_ft_cs[i] > cs_storage_depth_ft
+    smp_metrics$rpsu[i] = smp_metrics$peak_level_ft_ow[i] / ow_storage_depth_ft * 100
+    smp_metrics$have_data[i] = TRUE
+  }
 }
+
+# Remove rows from events with no data
+smp_metrics <- filter(smp_metrics, have_data == TRUE) %>%
+  select(-have_data)
 
 # Close database connection
 poolClose(mars_con)
@@ -107,5 +112,5 @@ ggplot(data = filter(smp_metrics, rpsu>= 0), mapping = aes(x = eventdepth_in, y 
 ggsave(paste0(smp_id,"/output/rpsu_vs_depth_", eval_end, ".png"))
 
 # Calculate median RPSU for storms over 1.5"
-smp_metrics_big_storms <- filter(smp_metrics, eventdepth_in > 1)
+smp_metrics_big_storms <- filter(smp_metrics, eventdepth_in > 1.5, is.finite(rpsu))
 median_rpsu <- median(smp_metrics_big_storms$rpsu)
