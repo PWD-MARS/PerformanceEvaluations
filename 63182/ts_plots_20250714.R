@@ -77,12 +77,12 @@ plot_ts <-
             color = "black",
             size = 0.4,
             linetype = "dashed"
-          ) +
-         annotate("text",
-                  x = min(smp_monitor_data$dtime)-months(2),
-                  y = key_depths[i] + 0.2,
-                  label = key_elev_descrips[i],
-                  hjust = 0)
+          ) #+
+         # annotate("text",
+         #          x = min(smp_monitor_data$dtime)-months(2),
+         #          y = key_depths[i] + 0.2,
+         #          label = key_elev_descrips[i],
+         #          hjust = 0)
       }
     }
     
@@ -119,16 +119,15 @@ key_date_descrips <- c()
 
 # CS1
 cs1_suffix <- 'CS1'
-cs1_elevs <- c(23.78, 25.24, 25.72, 26.06, 30.72, 31.22, 38.01)
+cs1_elevs <- c(23.78, 25.24, 25.72, 26.06, 30.72, 31.22) # Not including top of CS1 at 38.01
 cs1_elev_descrips <-
   c(
     'bottom of CS',
     'bottom of stone',
     'underdrain invert',
-    'weir orifice',
+    'weir orifice invert',
     'top of weir',
-    'top of stone',
-    'top of CS1'
+    'top of stone'
   )
 cs1_invert_elev <- cs1_elevs[1]
 cs1_plot <-
@@ -150,9 +149,12 @@ ggsave(paste0(smp_id, '/output/cs1_ts_', eval_end, '.png'))
 
 # OW1
 ow1_suffix <- "OW1"
-ow1_elevs <- c(25.51, 25.24, 31.22, 39.01)
-ow1_elev_descrips <- c('bottom of OW1', 'bottom of stone', 
-                       'top of stone', 'top of OW1')
+ow1_elevs <- c(25.51, 25.24, 25.72, 26.06, 31.22) # Removed top of OW1 39.01
+ow1_elev_descrips <- c('bottom of OW1', 
+                       'bottom of stone', 
+                       'underdrain invert',
+                       'weir invert',
+                       'top of stone')
 ow1_invert_elev <- ow1_elevs[1]
 ow1_plot <-
   plot_ts(
@@ -172,9 +174,12 @@ ggsave(paste0(smp_id, '/output/ow1_ts_', eval_end, '.png'))
 
 # OW2
 ow2_suffix <- 'OW2'
-ow2_elevs <- c(25.51, 25.24, 31.22, 35.14)
-ow2_elev_descrips <- c('bottom of OW2', 'bottom of stone', 
-                       'top of stone', 'top of OW2')
+ow2_elevs <- c(25.51, 25.24, 25.72, 26.06, 31.22) #Removed top of OW 31.14
+ow2_elev_descrips <- c('bottom of OW2', 
+                       'bottom of stone', 
+                       'underdrain invert',
+                       'weir orifice',
+                       'top of stone')
 ow2_invert_elev <- ow2_elevs[1]
 ow2_plot <-
   plot_ts(

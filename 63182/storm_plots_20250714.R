@@ -151,22 +151,23 @@ for(i in 1:length(event_data$gage_event_uid)) {
     scale_x_datetime(date_breaks = "24 hours", minor_breaks = "12 hours") +
     labs(color = "Location")
   if (length(key_depths) > 0 & length(key_elev_descrips) > 0) {
-    for(j in c(2, 5, 7, 8)){
+    for(j in c(2, 5, 6, 7, 8)){
       wl_ts <-
         wl_ts + geom_hline(
           yintercept = key_depths[j],
           color = "black",
           size = 0.4,
           linetype = "dashed"
-        ) +
-      annotate(
-        "text",
-        size = unit(2.6, 'pt'),
-        x = full_data_i$dtime[1]+days(1),
-        y = key_depths[j] + 0.05,
-        label = key_elev_descrips[j],
-        hjust = 1
-      )
+        ) 
+      # +
+      # annotate(
+      #   "text",
+      #   size = unit(2.6, 'pt'),
+      #   x = full_data_i$dtime[1]+days(1),
+      #   y = key_depths[j] + 0.05,
+      #   label = key_elev_descrips[j],
+      #   hjust = 1
+      # )
     }
   }
   # Create rainfall plot

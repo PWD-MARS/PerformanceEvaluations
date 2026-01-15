@@ -70,7 +70,7 @@ smp_metrics <- marsFetchRainEventData(mars_con,
   
   mutate(
     # Create empty cols for metrics
-    peak_level_ft_ow = NA, peak_level_ft_cs = NA, overtop = NA, rpsu = NA, have_data = NA) %>%
+    peak_level_ft_ow = NA, peak_level_ft_cs = NA, overtop = NA, rpsu = NA, monitored = NA) %>%
     # Remove unnecessary cols
     select(-gage_uid)
 
@@ -86,13 +86,13 @@ for(i in 1:length(smp_metrics$gage_event_uid)){
     smp_metrics$peak_level_ft_cs[i] = max(event_data_i$cslevel_ft)
     smp_metrics$overtop[i] = smp_metrics$peak_level_ft_cs[i] > cs_storage_depth_ft
     smp_metrics$rpsu[i] = smp_metrics$peak_level_ft_ow[i] / ow_storage_depth_ft * 100
-    smp_metrics$have_data[i] = TRUE
+    smp_metrics$monitored[i] = TRUE
   }
 }
 
 # Remove rows from events with no data
-smp_metrics <- filter(smp_metrics, have_data == TRUE) %>%
-  select(-have_data)
+smp_metrics <- filter(smp_metrics, monitored == TRUE) %>%
+  select(-monitored)
 
 # Close database connection
 poolClose(mars_con)
@@ -105,7 +105,7 @@ write_csv(x = smp_metrics,
 ggplot(data = filter(smp_metrics, rpsu>= 0), mapping = aes(x = eventdepth_in, y = rpsu)) + 
   geom_point() + 
   labs(title = paste0('Relative Percent of Storage Used at SMP ',smp_id),
-       subtitle = paste0('All Rain Events from ', eval_start, ' - ', eval_end)) + 
+       subtitle = paste0('All Rain Events in which both OW1 and CS1 were monitored')) + 
   xlab('Rain Event Depth (in)') + 
   #ylim(0, 50) + 
   ylab('% Storage Used') 
