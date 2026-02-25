@@ -1,0 +1,325 @@
+---
+title: "ows_quarterly"
+format: html
+---
+
+```{r}
+#| include: false
+library(tidyverse)
+library(readxl) 
+```
+
+```{r}
+# Function for reading QAQC files
+read_qaqc <- function(file_path) {
+  # Read Final_Import_Site sheet
+  qaqc <- readxl::read_xlsx(file_path,
+                            # Skip first header column
+                            skip = 1,
+                            range = "Data!A2:J8832",
+                            col_types = c("date", "date", "numeric",
+                                          "date", "numeric", 
+                                          "numeric","numeric","numeric",
+                                          "numeric", "numeric"
+                            )) |>
+    # Not using `Standard Dtime` due to Excel rounding issue
+    rename(dtime = `Dtime Baro`,
+           water_level = `Corrected Water Depth (ft)`) |>
+    # Select only dtime and water level
+    select(dtime, water_level) |>
+    # Make sure tz is correct
+    mutate(dtime = force_tz(dtime, tz = "EST"))
+}
+```
+
+```{r}
+# Paths to files
+base <- "\\\\pwdoows\\OOWS\\Watershed Sciences\\GSI Monitoring\\02 GSI Monitoring Sites\\Trenton & Auburn_1085\\QAQC\\1085-1-1"
+
+cs1_files <- list.files(paste(base, "\\CS1", sep = ""))
+cs1_paths <- map(base, paste, "\\CS1\\", cs1_files, sep = "") |> unlist()
+ow4_files <- list.files(paste(base, "\\OW4", sep = ""))
+ow4_paths <- map(base, paste, "\\OW4\\", ow4_files, sep = "") |> unlist()
+ow6_files <- list.files(paste(base, "\\OW6", sep = ""))
+ow6_paths <- map(base, paste, "\\OW6\\", ow6_files, sep = "") |> unlist()
+
+cs1 <- map(cs1_paths, read_qaqc) |> bind_rows()
+
+cs1_clean <- cs1 |>
+  na.omit()
+
+rain <- read_csv("data\\1085-1-1_2023-08-08_to_2025-09-30_rainfall.csv") |>
+  select(dtime, rainfall_in) |>
+  # Change time zone without affecting values
+  mutate(dtime =  force_tz(dtime, tz = "EST")) 
+```
+
+```{r}
+# Measurements
+cs1_top_stone = 11
+cs1_sump = 4.1
+cs1_weir = 8.5
+```
+
+```{r}
+# Merge rain with level 
+cs1_comb <-
+  cs1_clean |>
+  left_join(rain, by = join_by(dtime == dtime))
+```
+
+```{r}
+cs1_24plot <- ggplot(cs1_comb |>
+  dplyr::filter(lubridate::year(dtime) == 2024),
+  aes(x = dtime)) +
+  geom_line(aes(y = water_level)) + 
+  # Top of stone
+  geom_ribbon(aes(ymin = cs1_top_stone, ymax = 0), fill = "lightblue", alpha = 0.4) +
+  # Top of weir
+  geom_hline(aes(yintercept = cs1_weir),
+             linewidth = 0.6,
+             linetype = "dashed") + 
+   labs(
+    x = "Date",
+    y = "Water level (ft)",
+    color = NULL,
+    title = "1085-1 CS1 Outflow Water Level Response (15-minute interval)"
+  )
+
+cs1_24rainfall <- ggplot(cs1_comb |>
+  filter(lubridate::year(dtime) == 2024) |>
+    group_by(hour = lubridate::floor_date(dtime, "3 hour")) |>
+               summarize(hr_rain = sum(rainfall_in, na.rm = TRUE)),
+  aes(y = hr_rain)) +
+  geom_col(aes(x = hour)) +
+  scale_y_continuous(lim = c(0, 2)) +
+  labs(title = "3-hour rain interval")
+
+cowplot::plot_grid(cowplot::plot_grid(cs1_24rainfall, 
+                                      cs1_24plot,
+                                      nrow = 2,
+                                      rel_heights = c(.5, 1)))
+
+```
+
+```{r}
+cs1_25plot <- ggplot(cs1_comb |>
+  dplyr::filter(lubridate::year(dtime) == 2025),
+  aes(x = dtime)) +
+  geom_line(aes(y = water_level)) + 
+  # Top of stone
+  geom_ribbon(aes(ymin = cs1_top_stone, ymax = 0), fill = "lightblue", alpha = 0.4) +
+  # Top of weir
+  geom_hline(aes(yintercept = cs1_weir),
+             linewidth = 0.6,
+             linetype = "dashed") + 
+   labs(
+    x = "Date",
+    y = "Water level (ft)",
+    color = NULL,
+    title = "1085-1 CS1 Outflow Water Level Response (15-minute interval)"
+  )
+
+cs1_25rainfall <- ggplot(cs1_comb |>
+  filter(lubridate::year(dtime) == 2025) |>
+    group_by(hour = lubridate::floor_date(dtime, "3 hour")) |>
+               summarize(hr_rain = sum(rainfall_in, na.rm = TRUE)),
+  aes(y = hr_rain)) +
+  geom_col(aes(x = hour)) +
+  scale_y_continuous(lim = c(0, 2)) +
+  labs(title = "3-hour rain interval")
+
+cowplot::plot_grid(cowplot::plot_grid(cs1_25rainfall, 
+                                      cs1_24plot,
+                                      nrow = 2,
+                                      rel_heights = c(.5, 1)))
+```
+
+```{r}
+cs1_23plot <- ggplot(cs1_comb |>
+  dplyr::filter(lubridate::year(dtime) == 2023),
+  aes(x = dtime)) +
+  geom_line(aes(y = water_level)) + 
+  # Top of stone
+  geom_ribbon(aes(ymin = cs1_top_stone, ymax = 0), fill = "lightblue", alpha = 0.4) +
+  # Top of weir
+  geom_hline(aes(yintercept = cs1_weir),
+             linewidth = 0.6,
+             linetype = "dashed") + 
+   labs(
+    x = "Date",
+    y = "Water level (ft)",
+    color = NULL,
+    title = "1085-1 CS1 2025 Outflow Water Level Response (15-minute interval)"
+  )
+
+cs1_23rainfall <- ggplot(cs1_comb |>
+  filter(lubridate::year(dtime) == 2023) |>
+    group_by(hour = lubridate::floor_date(dtime, "3 hour")) |>
+               summarize(hr_rain = sum(rainfall_in, na.rm = TRUE)),
+  aes(y = hr_rain)) +
+  geom_col(aes(x = hour)) +
+  scale_y_continuous(lim = c(0, 2)) +
+  labs(title = "3-hour rain interval")
+
+cowplot::plot_grid(cowplot::plot_grid(cs1_23rainfall, 
+                                      cs1_23plot,
+                                      nrow = 2,
+                                      rel_heights = c(.5, 1)))
+```
+
+```{r}
+ow4 <- map(ow4_paths, read_qaqc) |> bind_rows()
+
+ow4_clean <- ow4 |>
+  na.omit()
+
+# Merge rain with level 
+ow4_comb <-
+  ow4_clean |>
+  left_join(rain, by = join_by(dtime == dtime))
+```
+
+```{r}
+ow4_24plot <- ggplot(ow4_comb |>
+  dplyr::filter(lubridate::year(dtime) == 2024),
+  aes(x = dtime)) +
+  geom_line(aes(y = water_level)) + 
+  # # Top of stone
+  # geom_ribbon(aes(ymin = cs1_top_stone, ymax = 0), fill = "lightblue", alpha = 0.4) +
+  # # Top of weir
+  # geom_hline(aes(yintercept = cs1_weir),
+  #            linewidth = 0.6,
+  #            linetype = "dashed") + 
+   labs(
+    x = "Date",
+    y = "Water level (ft)",
+    color = NULL,
+    title = "1085-1 ow4 Outflow Water Level Response (15-minute interval)"
+  )
+
+ow4_24rainfall <- ggplot(ow4_comb |>
+  filter(lubridate::year(dtime) == 2024) |>
+    group_by(hour = lubridate::floor_date(dtime, "3 hour")) |>
+               summarize(hr_rain = sum(rainfall_in, na.rm = TRUE)),
+  aes(y = hr_rain)) +
+  geom_col(aes(x = hour)) +
+  scale_y_continuous(lim = c(0, 2)) +
+  labs(title = "3-hour rain interval")
+
+cowplot::plot_grid(cowplot::plot_grid(ow4_24rainfall, 
+                                      ow4_24plot,
+                                      nrow = 2,
+                                      rel_heights = c(.5, 1)))
+```
+
+```{r}
+ow6 <- map(ow6_paths, read_qaqc) |> bind_rows()
+
+ow6_clean <- ow6 |>
+  na.omit()
+
+# Merge rain with level 
+ow6_comb <-
+  ow6_clean |>
+  left_join(rain, by = join_by(dtime == dtime))
+```
+
+```{r}
+ow6_24plot <- ggplot(ow6_comb |>
+  dplyr::filter(lubridate::year(dtime) == 2024),
+  aes(x = dtime)) +
+  geom_line(aes(y = water_level)) + 
+  # # Top of stone
+  # geom_ribbon(aes(ymin = ow6_top_stone, ymax = 0), fill = "lightblue", alpha = 0.4) +
+  # # Top of weir
+  # geom_hline(aes(yintercept = cs1_weir),
+  #            linewidth = 0.6,
+  #            linetype = "dashed") + 
+   labs(
+    x = "Date",
+    y = "Water level (ft)",
+    color = NULL,
+    title = "1085-1 OW6 Outflow Water Level Response (15-minute interval)"
+  )
+
+ow6_24rainfall <- ggplot(ow6_comb |>
+  filter(lubridate::year(dtime) == 2024) |>
+    group_by(hour = lubridate::floor_date(dtime, "3 hour")) |>
+               summarize(hr_rain = sum(rainfall_in, na.rm = TRUE)),
+  aes(y = hr_rain)) +
+  geom_col(aes(x = hour)) +
+  scale_y_continuous(lim = c(0, 2)) +
+  labs(title = "3-hour rain interval")
+
+cowplot::plot_grid(cowplot::plot_grid(ow6_24rainfall, 
+                                      ow6_24plot,
+                                      nrow = 2,
+                                      rel_heights = c(.5, 1)))
+```
+
+```{r}
+ow6_25plot <- ggplot(ow6_comb |>
+  dplyr::filter(lubridate::year(dtime) == 2025),
+  aes(x = dtime)) +
+  geom_line(aes(y = water_level)) + 
+  # # Top of stone
+  # geom_ribbon(aes(ymin = ow6_top_stone, ymax = 0), fill = "lightblue", alpha = 0.4) +
+  # # Top of weir
+  # geom_hline(aes(yintercept = cs1_weir),
+  #            linewidth = 0.6,
+  #            linetype = "dashed") + 
+   labs(
+    x = "Date",
+    y = "Water level (ft)",
+    color = NULL,
+    title = "1085-1 2025 OW6 Outflow Water Level Response (15-minute interval)"
+  )
+
+ow6_25rainfall <- ggplot(ow6_comb |>
+  filter(lubridate::year(dtime) == 2025) |>
+    group_by(hour = lubridate::floor_date(dtime, "3 hour")) |>
+               summarize(hr_rain = sum(rainfall_in, na.rm = TRUE)),
+  aes(y = hr_rain)) +
+  geom_col(aes(x = hour)) +
+  scale_y_continuous(lim = c(0, 2)) +
+  labs(title = "3-hour rain interval")
+
+cowplot::plot_grid(cowplot::plot_grid(ow6_25rainfall, 
+                                      ow6_25plot,
+                                      nrow = 2,
+                                      rel_heights = c(.5, 1)))
+```
+
+```{r}
+ow6_23plot <- ggplot(ow6_comb |>
+  dplyr::filter(lubridate::year(dtime) == 2023),
+  aes(x = dtime)) +
+  geom_line(aes(y = water_level)) + 
+  # # Top of stone
+  # geom_ribbon(aes(ymin = ow6_top_stone, ymax = 0), fill = "lightblue", alpha = 0.4) +
+  # # Top of weir
+  # geom_hline(aes(yintercept = cs1_weir),
+  #            linewidth = 0.6,
+  #            linetype = "dashed") + 
+   labs(
+    x = "Date",
+    y = "Water level (ft)",
+    color = NULL,
+    title = "1085-1 OW6 Outflow Water Level Response (15-minute interval)"
+  )
+
+ow6_23rainfall <- ggplot(ow6_comb |>
+  filter(lubridate::year(dtime) == 2023) |>
+    group_by(hour = lubridate::floor_date(dtime, "3 hour")) |>
+               summarize(hr_rain = sum(rainfall_in, na.rm = TRUE)),
+  aes(y = hr_rain)) +
+  geom_col(aes(x = hour)) +
+  scale_y_continuous(lim = c(0, 2)) +
+  labs(title = "3-hour rain interval")
+
+cowplot::plot_grid(cowplot::plot_grid(ow6_23rainfall, 
+                                      ow6_23plot,
+                                      nrow = 2,
+                                      rel_heights = c(.5, 1)))
+```
