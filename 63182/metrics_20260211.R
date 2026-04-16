@@ -158,13 +158,13 @@ ggsave(paste0(smp_id, "/output/rpsu_boxplot_all_", eval_end, ".png"))
 
 rpsu_by_size <- ggplot(filter(smp_metrics, storm_size != 'small'), aes(x = period, y = rpsu)) + 
   geom_boxplot(outliers = FALSE) + 
-  ylim(0, 50) + 
+  ylim(0, 100) + 
   labs(title = 'Relative Percent of Storage Used Before and After Repairs') +
   ylab('RPSU') +
   theme(axis.title.x = element_blank()) +  
   geom_jitter(color='purple', size=1, width = 0.05) +
   stat_summary(fun = median, geom = "text", 
-               aes(label = paste0('Median: ', round(..y.., 1))), position = position_nudge(y = 1.2, x = 0.32)) + 
+               aes(label = paste0('Median: ', round(..y.., 1))), position = position_nudge(y = 1.75, x = 0.32)) + 
   facet_grid(cols = vars(storm_size), labeller = size_labeller)
 ggsave(paste0(smp_id, "/output/rpsu_by_size_boxplot_", eval_end, ".png"))
 
