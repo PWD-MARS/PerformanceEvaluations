@@ -1,0 +1,85 @@
+---
+title: "SMP 63491: OW1 Response Threshold Calculations"
+author: "Max Avener"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+At SMP 63491 (Summer St Townhomes), the bottom of the observation well (OW1) is estimated to be 0.62 ft above the bottom of stone. As a result, it is not possible to observe a response in the observation well for smaller rain events. 
+The goal of the calculations below is to determine the characteristics of a rain event (event depth and peak intensity) for which the system water level is expected to respond to a depth that is observable in OW1. To avoid noise due to measurement error and sensor drift, this investigation will consider 0.70 ft (relative to the bottom of stone) to be the minimum "observable" response.  
+
+
+## SMP Parameters
+
+The following SMP parameters are assumed based on a combination of design documents, design reports, and the H&H compiled stats spreadsheet:
+
+```{r smp_params}
+DCIA_sf <- 6709 # Contributing impervious area, in square feet
+Lbasin_ft <- 40 # Length of basin, in feet
+Wbasin_ft <- 18 # Width of basin, in feet
+Dorifice_in <- 2.125 # Diameter of orifice at bottom of system, in inches
+WLobs_ft <- 0.70 # Minimum water level response observable in OW1, in ft
+porosity <- 0.51 # Average porosity. Due to pipe-in-stone design, the actual porosity varies throughout the basin
+
+## **Note that design documents suggest basin may be trapezoidal, but the basin footprint shown in the plan view does not account for that. The length and width listed above are the only length and width given in the design.
+
+```
+
+## Physics Parameters
+
+The following parameters are assumed based on known physics constants and best practices:
+
+```{r phys_params}
+
+Cd <- 0.62 # Dimensionless discharge coefficient. Exact coefficient depends on geometry but 0.62 is used in PWD GSI # calculations
+g_fpss <- 32.2 # Gravitational acceleration constant, in feet per square second
+
+```
+
+## Minimum Event Depth Calculation
+
+The calculations estimate the minimum rain event depth needed to create a response that is observable in the observation well, with the following caveats:
+
+* The calculations treat the storage as static - that is, there is no accounting for volume lost through the orifice (or other areas of leakage) as the system fills. This may result in underestimation of the minimum event depth.
+* The calculations assume the system is empty before the rain event. This may result in overestimation of the minimum event depth, if the system has not fully drained from the previous event. 
+
+
+```{r min_event_depth}
+
+Vmin_cf <- Lbasin_ft * Wbasin_ft * WLobs_ft * porosity # Volume of water needed to produce observable response, in cubic feet
+eventdepthmin_ft <- Vmin_cf / DCIA_sf # Min event depth, in feet
+eventdepthmin_in <- eventdepthmin_ft * 12 # Min event depth, in inches
+paste0('Minimum rain event depth: ', round(eventdepthmin_in, digits =2), ' inches')
+```
+## Minimum Event Peak Intensity Calculation
+
+The calculations estimate the minimum rain event peak intensity needed to create a response that is observable in the observation well, with the following caveat:
+
+* The calculations do not account for concentration time. If the duration of a rain event is shorter than the concentration time, then the peak flow rate into the system will always be lower than the rate at which rain accumulates over the drainage area. In this case, the calculations below may underestimate the peak intensity required to produce an observable response. This discrepancy is unlikely to be significant for this SMP, given that the drainage area is small. 
+```{r min_event_peak_intensity}
+
+# Calculate flow rate out of orifice when water level is equal to WLobs
+Dorifice_ft <- Dorifice_in / 12 # Orifice diameter, in feet
+Aorifice_sf <- pi * (Dorifice_ft / 2)**2 # Orifice area, in square feet
+Qout_cfs <- Cd * Aorifice_sf * sqrt(2 * g_fpss * WLobs_ft) # Flow rate out of orifice, in cfs
+
+# Calculate rainfall intensity over full contributing area required to produce Qout
+eventintensitymin_fps <- Qout_cfs / DCIA_sf # Minimum rain event intensity, in feet per second
+eventintensitymin_inhr <- eventintensitymin_fps * 12 * 3600 # Minimum rain event intensity, in inches per hour
+paste0('Minimum peak intensity: ', round(eventintensitymin_inhr, digits = 2), ' inches per hour')
+```
+
+## Comparison with Monitoring Data
+
+The plot below includes all rain events in which both OW1 and CS1 were monitored, from 11/01/2024 through 3/11/2026 (72 events total). Each event is plotted with rain event depth on the horizontal axis and peak intensity on the vertical axis. Black circles represent events in which a response was observed in OW1, and white circles represent events in which no response was observed. 
+
+The blue dashed lines illustrate the event depth (vertical line) and peak intensity (horizontal line) calculated above. The calculations predict that a response will be observed for all events in the top right quadrant of the plot, and no events elsewhere. 
+
+![](output/resp_vs_depth_intensity_2026-03-11.png)
+
