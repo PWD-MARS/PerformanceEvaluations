@@ -78,11 +78,14 @@ plot_ts <-
             size = 0.4,
             linetype = "dashed"
           ) +
-        annotate("text",
-                 x = min(smp_monitor_data$dtime)-months(2),
-                 y = key_depths[i] + 0.2,
-                 label = key_elev_descrips[i],
-                 hjust = 0)
+          annotate("text",
+                   size = unit(3, 'pt'),
+                   x = min(smp_monitor_data$dtime)-months(3),
+                   y = key_depths[i] + 0.05,
+                   label = key_elev_descrips[i],
+                   hjust = 0,
+                   vjust = 0,
+                   lineheight = 0.8)
       }
     }
     
@@ -125,12 +128,12 @@ cs1_elevs <- c(
   69.25, 71.0, 72.25, 72.75)#, 80.70) 
 cs1_elev_descrips <-
   c(
-    'bottom of CS',
-    'bottom of stone', #also UD invert, 2" orifice invert
-    '6" orifice invert',
-    'top of weir',
-    'top of stone')#,
-    #'top of CS'
+    'Bottom of CS',
+    'Bottom of Stone/ \n 2.125" Orifice Invert',
+    '6" Orifice Invert',
+    'Top of Weir',
+    'Top of Stone')#,
+    #'Top of CS'
  # )
 
 cs1_invert_elev <- cs1_elevs[1]
@@ -154,10 +157,10 @@ ggsave(paste0(smp_id, '/output/cs1_ts_', eval_end, '.png'))
 # OW1
 ow1_suffix <- "OW1"
 ow1_elevs <- c(69.25, 69.87, 72.75)#, 79.95) 
-ow1_elev_descrips <- c('bot of stone',
-    'bottom of OW1',
-    'top of stone')#,
-#    'top of OW1')
+ow1_elev_descrips <- c('Bottom of Stone/ \n 2.125" Orifice Invert',
+    'Bottom of OW1',
+    'Top of Stone')#,
+#    'Top of OW1')
 ow1_invert_elev <- ow1_elevs[2]
 ow1_plot <-
   plot_ts(

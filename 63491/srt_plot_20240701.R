@@ -30,28 +30,8 @@ eval_start_time <- ymd_hm('2024-07-01 11:15')
 eval_end <- '2024-07-04'
 eval_end_time <- ymd_hm('2024 07-04 23:55')
 
-key_elevs <-
-  c(
-    67.28, 
-    69.25, 
-    69.87, 
-    71.0, 
-    72.25,
-    72.75)#,
-    #79.95, 
-    #80.7
-  #)
-key_elev_descrips <-
-  c(
-    'bottom of CS1',
-    'bottom of stone/ \n 2.125" orifice invert',#/underdrain invert/2" orifice invert',
-    'bottom of OW1',
-    '6"x8" orifice invert',
-    'top of stone',
-    'top of weir'#,
-    #'top of OW1',
-    #'top of CS1'
-  )
+key_elevs <- c(67.28, 69.25, 69.87, 71.00, 72.25, 72.75)
+key_elev_descrips <- c('Bottom of CS1','Bottom of Stone/ \n 2.125" Orifice Invert','Bottom of OW1','6" Orifice Invert','Top of Weir', 'Top of Stone')
 
 sys_invert_elev <- 69.25
 key_depths <- key_elevs - sys_invert_elev
@@ -67,7 +47,7 @@ cs1_monitor_data <- read_excel("63491/QAQC_SRT_63491_20240701_SPM_20240715.xlsx"
   select(dtime = 5, cs1level_ft = 11) %>%
   filter(dtime > eval_start_time ) %>%
   filter(dtime <= eval_end_time) %>%
-  mutate(cs1level_ft =  cs1level_ft - cs1_ref_depth) 
+  mutate(cs1level_ft =  cs1level_ft) 
 
 # Import OW1 monitoring data for full monitoring period
 ow1_monitor_data <- read_excel("63491/QAQC_SRT_63491_20240701_SPM_20240715.xlsx",
@@ -76,7 +56,7 @@ ow1_monitor_data <- read_excel("63491/QAQC_SRT_63491_20240701_SPM_20240715.xlsx"
   select(dtime = 5, ow1level_ft = 11) %>%
   filter(dtime > eval_start_time ) %>%
   filter(dtime <= eval_end_time) %>%
-  mutate(ow1level_ft =  ow1level_ft - ow1_ref_depth) 
+  mutate(ow1level_ft =  ow1level_ft) 
 
 
 # Import rainfall data for full monitoring period
@@ -147,26 +127,7 @@ for(j in c(2, 3, 4, 5, 6)){
   )
 }
   
-# Create rainfall plot
-rain_ts <- ggplot(full_data, aes(dtime)) +
-  geom_col(aes(y = rainfall_in)) +
-  ylab("Rainfall (in)") +
-  xlab("Date") +
-  labs(title = paste0("Rainfall from ", eval_start, " SRT")) + 
-  scale_x_datetime(date_breaks = "7 days", minor_breaks = "1 day") +
-  theme(
-    axis.title.x = element_blank(),
-    axis.text.x = element_blank(),
-    axis.ticks.x = element_blank()
-  )
-# Create combined plot
-ggarrange(
-  rain_ts,
-  wl_ts,
-  nrow = 2,
-  heights = c(1, 3),
-  legend = "bottom"
-)
+wl_ts
   
 ggsave(paste0(smp_id, '/output/srt_plot_', eval_start, '.png'))
 

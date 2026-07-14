@@ -11,6 +11,7 @@ library(pool)
 library(lubridate)
 library(magrittr)
 library(ggpubr)
+library(readxl)
 
 # Create database connection
 mars_con <- dbPool(
@@ -33,7 +34,7 @@ smp_id <- '63491'
 eval_start_date <- '2024-07-01'
 eval_end_date <- '2024-07-04'
 eval_start_time <- ymd_hm('2024-07-01 11:15', tz = 'Etc/GMT+5')
-eval_end_time <- ymd_hm('2024-07-04 23:45', tz = 'Etc/GMT+5')
+eval_end_time <- ymd_hm('2024-07-04 0:00', tz = 'Etc/GMT+5')
 draindown_start_time <- ymd_hm('2024-07-01 13:15', tz = 'Etc/GMT+5')
 draindown_end_time <- ymd_hm('2024-07-02 13:00', tz = 'Etc/GMT+5')
 Abasin_sf <- 40 * 18 # Area of basin, in square feet
@@ -42,24 +43,8 @@ Cd <- 0.62 # Dimensionless discharge coefficient. Exact coefficient depends on g
 g_fpss <- 32.2 # Gravitational acceleration constant, in feet per square second
 porosity <- 0.51 # Average porosity throughout basin (local porosity varies due to pipe-in-stone design)
 
-key_elevs <-
-  c(
-    67.28, 
-    69.25, 
-    69.87, 
-    71.0, 
-    72.25,
-    72.75)
-
-key_elev_descrips <-
-  c(
-    'bottom of CS1',
-    'bottom of stone/ \n 2.125" orifice invert',
-    'bottom of OW1',
-    '6"x8" orifice invert',
-    'top of stone',
-    'top of weir'
-  )
+key_elevs <- c(67.28, 69.25, 69.87, 71.00, 72.25, 72.75)
+key_elev_descrips <- c('Bottom of CS1','Bottom of Stone/ \n 2.125" Orifice Invert','Bottom of OW1','6" Orifice Invert','Top of Weir', 'Top of Stone')
 
 sys_invert_elev <- 69.25
 key_depths <- key_elevs - sys_invert_elev
@@ -77,7 +62,7 @@ cs1_monitor_data <- read_excel("63491/QAQC_SRT_63491_20240701_SPM_20240715.xlsx"
   mutate(dtime = force_tz(dtime, tzone = 'Etc/GMT+5')) %>%
   filter(dtime >= eval_start_time ) %>%
   filter(dtime <= eval_end_time) %>%
-  mutate(cs1level_ft = cs1level_ft - cs1_ref_depth) 
+  mutate(cs1level_ft = cs1level_ft) 
 
 
 
@@ -89,7 +74,7 @@ ow1_monitor_data <- read_excel("63491/QAQC_SRT_63491_20240701_SPM_20240715.xlsx"
   mutate(dtime = force_tz(dtime, tzone = 'Etc/GMT+5')) %>%
   filter(dtime >= eval_start_time ) %>%
   filter(dtime <= eval_end_time) %>%
-  mutate(ow1level_ft = ow1level_ft - ow1_ref_depth)
+  mutate(ow1level_ft = ow1level_ft)
 
 # Import rainfall data for full monitoring period
 # rain_data <- marsFetchRainfallData(
@@ -126,7 +111,6 @@ full_data$ow1calclevel_ft <- NA # Create new column for calculated water levels
 
 # Loop through rows in full_data
 for(i in 1:nrow(full_data)) {
-  print(i)
   # At peak, set calc water level to observed water level
   if (full_data$dtime[i] == draindown_start_time) {
     full_data$ow1calclevel_ft[i] <- full_data$ow1level_ft[i]
@@ -143,7 +127,6 @@ for(i in 1:nrow(full_data)) {
   }
 }
 
-
 # Reshape monitoring data
 reshaped_data <- full_data %>%
   select(-rainfall_in) %>%
@@ -156,7 +139,7 @@ wl_ts <-
     geom_line(linewidth = 1) +
     ylab("Water Level (ft)") +
     xlab("Date") +
-    labs(title = 'Observed and Calculated Water Levels for 2025-07-31 Storm') + 
+    labs(title = 'Observed and Calculated Water Levels for 2024-07-01 SRT') + 
     scale_color_manual(labels = c('CS1 Observed', 'OW1 Calculated', 'OW1 Observed'), 
                        values = c('darkorange2', 'purple', 'dodgerblue')) + 
     scale_y_continuous(
@@ -172,44 +155,27 @@ if (length(key_depths) > 0 & length(key_elev_descrips) > 0) {
         color = "black",
         size = 0.4,
         linetype = "dashed"
-      ) 
+      ) + 
+      
+      annotate(
+        "text",
+        size = unit(2.6, 'pt'),
+        x = full_data$dtime[1]+days(2),
+        y = key_depths[j] + 0.04,
+        label = key_elev_descrips[j],
+        hjust = 0,
+        vjust = 0,
+        lineheight = 0.8
+      )
   }
 }
-#         
-#       annotate(
-#         "text",
-#         size = unit(2.6, 'pt'),
-#         x = full_data$dtime[1]+days(1),
-#         y = key_depths[j] + 0.04,
-#         label = key_elev_descrips[j],
-#         hjust = 0,
-#         vjust = 0,
-#         lineheight = 0.8
-#       )
-#   }
-# }
   
 # Create rainfall plot
-rain_ts <- ggplot(full_data, aes(dtime)) +
-  geom_col(aes(y = rainfall_in)) +
-  ylab("Rainfall (in)") +
-  xlab("Date") +
-  labs(title = "Rainfall for 2025-07-31 Storm")  +
-  theme(
-    axis.title.x = element_blank(),
-    axis.text.x = element_blank(),
-    axis.ticks.x = element_blank()
-)
-# Create combined plot
-ggarrange(
-  rain_ts,
-  wl_ts,
-  nrow = 2,
-  heights = c(1, 3),
-  legend = "bottom"
-)
 
-ggsave(paste0(smp_id, '/output/recession_plot_', eval_start_date, 'srt.png'))
+# Create combined plot
+wl_ts
+
+ggsave(paste0(smp_id, '/output/recession_plot_', eval_start_date, '_srt.png'))
 
 
 # Close database connection

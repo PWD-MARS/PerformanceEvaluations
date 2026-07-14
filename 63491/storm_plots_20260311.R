@@ -25,30 +25,11 @@ mars_con <- dbPool(
 
 smp_id <- '63491'
 eval_start <- '2024-11-01'
-eval_end <- '2025-12-31'
+eval_end <- '2026-03-11'
 
-key_elevs <-
-  c(
-    67.28, 
-    69.25, 
-    69.87, 
-    71.0, 
-    72.25,
-    72.75)#,
-    #79.95, 
-    #80.7
-  #)
-key_elev_descrips <-
-  c(
-    'bottom of CS1',
-    'bottom of stone/ \n 2.125" orifice invert',#/underdrain invert/2" orifice invert',
-    'bottom of OW1',
-    '6"x8" orifice invert',
-    'top of stone',
-    'top of weir'#,
-    #'top of OW1',
-    #'top of CS1'
-  )
+key_elevs <- c(67.28, 69.25, 69.87, 71.00, 72.25, 72.75)
+key_elev_descrips <- c('Bottom of CS1','Bottom of Stone/ \n 2.125" Orifice Invert','Bottom of OW1','6" Orifice Invert','Top of Weir', 'Top of Stone')
+
 
 sys_invert_elev <- 69.25
 key_depths <- key_elevs - sys_invert_elev

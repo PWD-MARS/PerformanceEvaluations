@@ -112,11 +112,14 @@ plot_ts <-
             size = 0.4,
             linetype = "dashed"
           ) +
-        annotate("text",
-                 x = min(reshaped_data$dtime)-months(2),
-                 y = key_depths[i] + 0.2,
-                 label = key_elev_descrips[i],
-                 hjust = 0)
+          annotate("text",
+                   size = unit(3, 'pt'),
+                   x = min(smp_monitor_data$dtime)-months(3),
+                   y = key_depths[i] + 0.05,
+                   label = key_elev_descrips[i],
+                   hjust = 0,
+                   vjust = 0,
+                   lineheight = 0.8)
       }
     }
     
@@ -153,7 +156,7 @@ sys_invert_elev <- 69.25
 ow_invert_elev <- 69.87
 cs_invert_elev <- 67.28
 key_elevs <- c(67.28, 69.25, 69.87, 71.00, 72.25, 72.75)
-key_elev_descrips <- c('Bottom of CS1','Bottom of Stone','Bottom of OW1','6" Orifice Invert','Top of Weir', 'Top of Stone')
+key_elev_descrips <- c('Bottom of CS1','Bottom of Stone/ \n 2.125" Orifice Invert','Bottom of OW1','6" Orifice Invert','Top of Weir', 'Top of Stone')
 key_dates <- c(0)
 key_date_descrips <- c()
 ow_color = 'dodgerblue'
