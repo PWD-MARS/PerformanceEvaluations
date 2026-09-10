@@ -40,7 +40,7 @@ roosevelt_all <- ggplot() +
 ggsave(filename = "roosevelt_all.png", roosevelt_all, width = 8, height = 6, units = "in")
 
 #Convert to water level for the sake of comparison to 20-8-1 Dry Weather
-roosevelt_elev <- mutate(hey, depth_ft = 40.5 - depth_ft) %>%
+roosevelt_elev <- mutate(roosevelt_level, depth_ft = 40.5 - depth_ft) %>%
   filter(depth_ft < 25, depth_ft > 17) #Clean up outliers
 
 roosevelt_inverted <- ggplot() + 
