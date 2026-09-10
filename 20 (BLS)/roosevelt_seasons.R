@@ -53,5 +53,15 @@ roosevelt_clean <- roosevelt_years |>
 
 roosevelt_peaks <- group_by(roosevelt_clean, year) %>%
   summarize(highwater_elev = min(depth_ft), lowwater_elev = max(depth_ft),
-            highwater_month = month[which(min(depth_ft))],
-            lowwater_month = month[which(max(depth_ft))])
+            highwater_month = month[which.min(depth_ft)],
+            lowwater_month = month[which.max(depth_ft)])
+
+seasons <- data.frame(season = c(rep("Spring", 3), rep("Summer", 3), rep("Autumn", 3), rep("Winter", 3)),
+                      month = c(3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2))
+
+roosevelt_seasons <- left_join(roosevelt_peaks, seasons, by = c("highwater_month" = "month"), suffix = c("", "_high")) %>%
+  left_join(seasons, by = c("lowwater_month" = "month"), suffix = c("", "_low")) %>%
+  mutate(season_high = season) %>%
+  select(-season)
+
+roosevelt_totals <- group_by(roosevelt_clean, year, month) %>% summarize(n = n())
