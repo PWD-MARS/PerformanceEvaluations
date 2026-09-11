@@ -12,33 +12,33 @@ mars <- dbConnect(drv = RPostgres::Postgres(),
                   password = Sys.getenv("admin_pwd"))
 #Plot full time series of BLS 20-4-1 OW1 and 20-8-1 OW1
 
-  # #Gather appropriate data for plotting
-  #   bls_4 <- marsFetchMonitoringData(mars, target_id = "20-4-1", 
-  #                                    ow_suffix = "OW1",
-  #                                    source = "gage", start_date = '2000-01-01',
-  #                                    end_date = '2030-01-01',
-  #                                    sump_correct = FALSE)
-  #   
-  #   bls_8 <- marsFetchMonitoringData(mars, target_id = "20-8-1", 
-  #                                    ow_suffix = "OW1",
-  #                                    source = "gage", start_date = '2000-01-01',
-  #                                    end_date = '2030-01-01',
-  #                                    sump_correct = FALSE)
-  # 
-  # #Write local copies for latency reasons
-  #   write.csv(bls_4$`Rain Event Data`, 
-  #             file = "20-4-1_ow1_events.csv", row.names=FALSE)
-  #   write.csv(bls_4$`Rainfall Data`, 
-  #             file = "20-4-1_ow1_rain.csv", row.names=FALSE)
-  #   write.csv(bls_4$`Level Data`, 
-  #             file = "20-4-1_ow1_level.csv", row.names=FALSE)
-  #   
-  #   write.csv(bls_8$`Rain Event Data`, 
-  #             file = "20-8-1_ow1_events.csv", row.names=FALSE)
-  #   write.csv(bls_8$`Rainfall Data`, 
-  #             file = "20-8-1_ow1_rain.csv", row.names=FALSE)
-  #   write.csv(bls_8$`Level Data`, 
-  #             file = "20-8-1_ow1_level.csv", row.names=FALSE)
+  #Gather appropriate data for plotting
+    bls_4 <- marsFetchMonitoringData(mars, target_id = "20-4-1",
+                                     ow_suffix = "OW1",
+                                     source = "gage", start_date = '2000-01-01',
+                                     end_date = '2030-01-01',
+                                     sump_correct = FALSE)
+
+    bls_8 <- marsFetchMonitoringData(mars, target_id = "20-8-1",
+                                     ow_suffix = "OW1",
+                                     source = "gage", start_date = '2000-01-01',
+                                     end_date = '2030-01-01',
+                                     sump_correct = FALSE)
+
+  #Write local copies for latency reasons
+    write.csv(bls_4$`Rain Event Data`,
+              file = "20-4-1_ow1_events.csv", row.names=FALSE)
+    write.csv(bls_4$`Rainfall Data`,
+              file = "20-4-1_ow1_rain.csv", row.names=FALSE)
+    write.csv(bls_4$`Level Data`,
+              file = "20-4-1_ow1_level.csv", row.names=FALSE)
+
+    write.csv(bls_8$`Rain Event Data`,
+              file = "20-8-1_ow1_events.csv", row.names=FALSE)
+    write.csv(bls_8$`Rainfall Data`,
+              file = "20-8-1_ow1_rain.csv", row.names=FALSE)
+    write.csv(bls_8$`Level Data`,
+              file = "20-8-1_ow1_level.csv", row.names=FALSE)
 
   #import from local copies
   rain_4 <- read_csv(file = "20-4-1_ow1_rain.csv")
@@ -177,6 +177,7 @@ mars <- dbConnect(drv = RPostgres::Postgres(),
                   !(dtime >= ymd("2025-02-06") & dtime <= ymd("2025-02-15" )),
                   dtime <= ymd("2026-01-01"))
     bls8_dry$level_ft[bls8_dry$level_ft < 0.5] <- NA
+    
     bls8_dryplot <- ggplot(data = bls8_dry) +
       geom_line(aes(x = dtime, y = level_ft)) + 
       geom_rect(xmin = min(bls8_dry$dtime), xmax = max(bls8_dry$dtime), 
@@ -272,3 +273,24 @@ mars <- dbConnect(drv = RPostgres::Postgres(),
       xlab("Datetime") + ggtitle("BLS 20-4-1 OW1 Dry Weather Water Level 2014-2016")
     ggsave(bls4_dryplot, filename = paste0("20-4-1_dry.png"),
            width = 8, height = 6, units = "in")    
+    
+    
+#Seasonal BLS dry weather highs and lows
+    bls8_years <- mutate(bls8_dry, year = year(dtime), month = month(dtime)) %>%
+      filter(year != 2026)
+    
+    bls8_peaks <- group_by(bls8_years, year) %>%
+      summarize(highwater_level = max(level_ft, na.rm = TRUE), lowwater_level = min(level_ft, na.rm = TRUE),
+                highwater_month = month[which.max(level_ft)],
+                lowwater_month = month[which.min(level_ft)])
+    
+    seasons <- data.frame(season = c(rep("Spring", 3), rep("Summer", 3), rep("Autumn", 3), rep("Winter", 3)),
+                          month = c(3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2))
+    
+    bls8_seasons <- left_join(bls8_peaks, seasons, by = c("highwater_month" = "month"), suffix = c("", "_high")) %>%
+      left_join(seasons, by = c("lowwater_month" = "month"), suffix = c("", "_low")) %>%
+      mutate(season_high = season) %>%
+      select(-season)
+    
+    roosevelt_totals <- group_by(roosevelt_clean, year, month) %>% summarize(n = n())
+    
