@@ -129,80 +129,63 @@ mars <- dbConnect(drv = RPostgres::Postgres(),
   
   colors <- c("Pipe Jetting" = "#000000")
 
-  cp <- ggplot() +
-    geom_point(data = ts, aes(x = dtime, y = ow_suffix)) +
-    geom_vline(data = datesofnote, aes(xintercept = date, col = event)) +
-    theme(axis.title.y = element_text(size = rel(1.2), color = "black"),
-      axis.text.x = element_text(size = rel(1.2), color = "black"), # set font size and color of x axis text #size previously set to 14
-      axis.text.y = element_text(size = rel(1.2), color = "black"), # set font size and color of y axis text
-      panel.background =  element_rect(fill = "white", colour = NA), # set white background
-      panel.border =      element_rect(fill = NA, colour="black"), # set black border
-      panel.grid.major =  element_line(colour = "grey70", linewidth = 0.2), # set major grid lines
-      panel.grid.minor =  element_line(colour = "grey90", linewidth = 0.5), # set minor grid lines)
-      legend.position = c(0.8, 0.3),
-      legend.background = element_rect(linewidth=0.5,
-                         linetype="solid",
-                         colour ="gray30")) +
-    labs(color = "Maintenance Event") +
-    ggtitle("Dependable Distribution 61354 Data Coverage") +
-    xlab("Date of Monitoring") +
-    ylab("Monitoring Location")
-
-  ggsave(cp, file = "cp2.png", width = 8, height = 6, units = "in")
+  # cp <- ggplot() +
+  #   geom_point(data = ts, aes(x = dtime, y = ow_suffix)) +
+  #   geom_vline(data = datesofnote, aes(xintercept = date, col = event)) +
+  #   theme(axis.title.y = element_text(size = rel(1.2), color = "black"),
+  #     axis.text.x = element_text(size = rel(1.2), color = "black"), # set font size and color of x axis text #size previously set to 14
+  #     axis.text.y = element_text(size = rel(1.2), color = "black"), # set font size and color of y axis text
+  #     panel.background =  element_rect(fill = "white", colour = NA), # set white background
+  #     panel.border =      element_rect(fill = NA, colour="black"), # set black border
+  #     panel.grid.major =  element_line(colour = "grey70", linewidth = 0.2), # set major grid lines
+  #     panel.grid.minor =  element_line(colour = "grey90", linewidth = 0.5), # set minor grid lines)
+  #     legend.position = c(0.8, 0.3),
+  #     legend.background = element_rect(linewidth=0.5,
+  #                        linetype="solid",
+  #                        colour ="gray30")) +
+  #   labs(color = "Maintenance Event") +
+  #   ggtitle("Dependable Distribution 61354 Data Coverage") +
+  #   xlab("Date of Monitoring") +
+  #   ylab("Monitoring Location")
   # 
-  #Count events within coverage periods
-  #Use ts_raw since there is more data there than in the DB
-  covered_events <- data.frame(NULL)
-  for(i in unique(ow$ow_suffix)){
-    ow <- filter(ts, ow_suffix == i)
-    events_ow <- filter(events, eventdatastart %in% ow$dtime) |>
-      mutate(ow_suffix = i)
-    
-    covered_events <- bind_rows(covered_events, events_ow)
-  }
-  
-  #Table for pre and post jetting
-  group_by(covered_events, ow_suffix) |>
-    summarize(total_events = n(),
-              before_jetting = sum(eventdatastart < ymd("2019-08-01")),
-              after_jetting = sum(eventdatastart >= ymd("2019-08-01")))
-  
-  ##2.2 Full time series plots ----
-  ts_plot <- rowwise(ts) |>
-    mutate(level_ft_zerofloor = ifelse(level_ft < 0, 0, level_ft))
-  fullseries <- ggplot() +
-    geom_line(data = ts_plot,
-              aes(x = dtime, y = level_ft_zerofloor, color = ow_suffix)) +
-    geom_vline(data = datesofnote,
-               aes(xintercept = date),
-               linewidth = 2) +
-    geom_label(data = datesofnote,
-               aes(x = date,
-                   y = c(2, 3),
-                   label = event),
-               size = rel(5.5),
-               fill = "white") +
-    labs(color = "Well Name",
-         x = "Sensor Time Series",
-         y = "Recorded Water Level (ft)",
-         title = "Full Time Series at 61354",
-         subtitle = "Negative sensor readings set equal to zero") +
-    theme(plot.title = element_text(size = rel(3), color = "black"),
-          plot.subtitle = element_text(size = rel(2), color = "black"),
-          axis.title = element_text(size = rel(2.2), color = "black"),
-          axis.text.x = element_text(size = rel(2), color = "black"), # set font size and color of x axis text #size previously set to 14
-          axis.text.y = element_text(size = rel(2), color = "black"), # set font size and color of y axis text
-          panel.background =  element_rect(fill = "white", colour = NA), # set white background
-          panel.border =      element_rect(fill = NA, colour="black"), # set black border
-          panel.grid.major =  element_line(colour = "grey70", linewidth = 0.2), # set major grid lines
-          panel.grid.minor =  element_line(colour = "grey90", linewidth = 0.5), # set minor grid lines
-          legend.position = "bottom",
-          legend.direction = "horizontal",
-          legend.background = element_rect(linewidth=0.5, linetype="solid", colour ="gray30"),
-          legend.title = element_text(size = rel(1.2), color = "black"),
-          legend.text = element_text(size = rel(1.2), color = "black")) +
-    guides(color = guide_legend(override.aes = list(linewidth = 5)))
-  ggsave(filename = "61354_fullseries.png", width = 12, height = 8, units = "in")
+  # ggsave(cp, file = "cp2.png", width = 8, height = 6, units = "in")
+
+  # ##2.2 Full time series plots ----
+  # ts_plot <- rowwise(ts) |>
+  #   mutate(level_ft_zerofloor = ifelse(level_ft < 0, 0, level_ft))
+  # fullseries <- ggplot() +
+  #   geom_line(data = ts_plot,
+  #             aes(x = dtime, y = level_ft_zerofloor, color = ow_suffix)) +
+  #   geom_vline(data = datesofnote,
+  #              aes(xintercept = date),
+  #              linewidth = 2) +
+  #   geom_label(data = datesofnote,
+  #              aes(x = date,
+  #                  y = c(2, 3),
+  #                  label = event),
+  #              size = rel(5.5),
+  #              fill = "white") +
+  #   labs(color = "Well Name",
+  #        x = "Sensor Time Series",
+  #        y = "Recorded Water Level (ft)",
+  #        title = "Full Time Series at 61354",
+  #        subtitle = "Negative sensor readings set equal to zero") +
+  #   theme(plot.title = element_text(size = rel(3), color = "black"),
+  #         plot.subtitle = element_text(size = rel(2), color = "black"),
+  #         axis.title = element_text(size = rel(2.2), color = "black"),
+  #         axis.text.x = element_text(size = rel(2), color = "black"), # set font size and color of x axis text #size previously set to 14
+  #         axis.text.y = element_text(size = rel(2), color = "black"), # set font size and color of y axis text
+  #         panel.background =  element_rect(fill = "white", colour = NA), # set white background
+  #         panel.border =      element_rect(fill = NA, colour="black"), # set black border
+  #         panel.grid.major =  element_line(colour = "grey70", linewidth = 0.2), # set major grid lines
+  #         panel.grid.minor =  element_line(colour = "grey90", linewidth = 0.5), # set minor grid lines
+  #         legend.position = "bottom",
+  #         legend.direction = "horizontal",
+  #         legend.background = element_rect(linewidth=0.5, linetype="solid", colour ="gray30"),
+  #         legend.title = element_text(size = rel(1.2), color = "black"),
+  #         legend.text = element_text(size = rel(1.2), color = "black")) +
+  #   guides(color = guide_legend(override.aes = list(linewidth = 5)))
+  # ggsave(filename = "61354_fullseries.png", width = 12, height = 8, units = "in")
   
   # 3.0 Event Plots ----
  
@@ -363,28 +346,7 @@ for(i in 1:nrow(events)){
     
     metrics <- bind_rows(metrics, metrics_cs1, metrics_ow1, metrics_ow2, metrics_ow3, metrics_co1)
 }
-  
-# Event Counts
-  event_coverage <- metrics |> 
-    group_by(gage_event_uid) |> 
-    summarize(hasow = any(ow_suffix %in% c("OW1", "OW2", "OW3")), 
-              hasoutflow = any(ow_suffix %in% c("CS1", "CO1"))) |> 
-    rowwise() |> 
-    mutate(hasboth = hasow & hasoutflow)
-  
-  coverage_table <- data.frame(hasow = sum(event_coverage$hasow),
-                               hasoutflow = sum(event_coverage$hasoutflow),
-                               hasboth = sum(event_coverage$hasboth)) |>
-    select(`Event has OW?` = hasow,
-           `Event has CS or CO?` = hasoutflow,
-           `Event has both?` = hasboth)
  
-#1. Time series plots for each and all monitoring locations
-
-#2. Plots for individual storms (already done?)
-  
-#3. Statistics before and after key events
-   #a. RPSU boxplots by location & storm size (<=1, >1) (by year?)
   # 4.0 No Inflection ----
   ## 4.1 Scatter plot of all wells ----
   rpsu_scatter <- ggplot() +
@@ -429,8 +391,8 @@ for(i in 1:nrow(events)){
   metrics_box <- mutate(metrics, 
                         year = as.factor(year(dtime)), 
                         depthbin = case_when(eventdepth_in <= 0.5 ~ "(0, 0.5] in",
-                                             eventdepth_in > 0.5 & eventdepth_in <= 1.0 ~ "(0.5, 1.0] in",
-                                             eventdepth_in > 1.0 & eventdepth_in <= 2.0 ~ "(1.0, 2.0] in",
+                                             eventdepth_in > 0.5 & eventdepth_in <= 1.0 ~ "(0.5, 1.18] in",
+                                             eventdepth_in > 1.0 & eventdepth_in <= 2.0 ~ "(1.18, 2.0] in",
                                              eventdepth_in > 2.0 ~ "(2.0, Inf) in")) |>
     filter(ow_suffix != "CO1")
   
@@ -559,9 +521,6 @@ for(i in 1:nrow(events)){
   rpsu_scatter_sincejetting <- ggplot() +
     geom_point(data = metrics_boxbyjettingyear,
                aes(x = dayssince, y = rpsu, color = overtop)) +
-    geom_smooth(data = metrics_boxbyjettingyear,
-                aes(x = dayssince, y = rpsu),
-                method = lm) +    
     labs(color = "Weir Overtop?", ,
           x = "Days Since Last Pipe Jetting",
           y = "Relative Percent of Storage Used",
@@ -584,4 +543,248 @@ for(i in 1:nrow(events)){
     guides(color = guide_legend(override.aes = list(size = 5)))
            
   ggsave(filename = "rpsu_scatter_pipejetting.png", width = 12, height = 8, units = "in")
+  
+  # 7.0 By Peak Intensity ----
+  
+  metrics_box_byintensity <- mutate(metrics, 
+      year = as.factor(year(dtime)), 
+      dayssince = case_when(dtime < ymd("2018-08-01") ~ NA,
+                            dtime >= ymd("2018-08-01") & dtime < ymd("2019-08-01") ~ round(difftime(dtime, ymd("2018-08-01"), units = "days"), 0),
+                            dtime >= ymd("2019-08-01") ~ round(difftime(dtime, ymd("2019-08-01"), units = "days"), 0)),
+      intensitybin = case_when(eventpeakintensity_inhr <= 0.5 ~ "(0, 0.5] in/hr",
+                               eventpeakintensity_inhr > 0.5 & eventpeakintensity_inhr <= 1.5 ~ "(0.5, 1.5] in/hr",
+                               eventpeakintensity_inhr > 1.5 & eventpeakintensity_inhr <= 2.5 ~ "(1.5, 2.5] in/hr",
+                               eventpeakintensity_inhr > 2.5 ~ "(2.5, Inf) in/hr")) |>
+    mutate(yearssince = as.factor(round(dayssince/365, 0))) |>
+    filter(ow_suffix == "CS1") |>
+    filter(yearssince != 7) # Only one event, makes the plots look weird
+  
+  metrics_cs1_truelabels_byintensity <- group_by(metrics_box_byintensity, intensitybin, overtop) |>
+    summarize(count = n()) |>
+    filter(overtop == TRUE)
+
+  metrics_cs1_falselabels_byintensity <- group_by(metrics_box_byintensity, intensitybin, overtop) |>
+    summarize(count = n()) |>
+    filter(overtop == FALSE)
+  
+  rpsu_box_overtop_byintensity <- ggplot() +
+    geom_boxplot(data = metrics_box_byintensity,
+                 aes(x = intensitybin, y = rpsu, color = overtop, fill = overtop), alpha = 0.25) +
+    geom_label(data = metrics_cs1_truelabels_byintensity,
+               aes(x = intensitybin, y = 100, label = paste("n =", count), color = overtop),
+               fill = "white", position = position_nudge(x = 0.2), show.legend = FALSE) +
+    geom_label(data = metrics_cs1_falselabels_byintensity,
+               aes(x = intensitybin, y = 100, label = paste("n =", count), color = overtop),
+               fill = "white", position = position_nudge(x = -0.2), show.legend = FALSE) +
+    labs(color = "Weir Overtop?", 
+         fill = "Weir Overtop?",
+         x = "Event Peak Intensity (inches per hour)",
+         y = "Relative Percent of Storage Used",
+         title = "Overtopping at CS1 Weir by Event Intensity at 61354") +
+    theme(plot.title = element_text(size = rel(3), color = "black"),
+          plot.subtitle = element_text(size = rel(2), color = "black"),
+          axis.title = element_text(size = rel(2.2), color = "black"),
+          axis.text.x = element_text(size = rel(2), color = "black"), # set font size and color of x axis text #size previously set to 14
+          axis.text.y = element_text(size = rel(2), color = "black"), # set font size and color of y axis text
+          panel.background =  element_rect(fill = "white", colour = NA), # set white background
+          panel.border =      element_rect(fill = NA, colour="black"), # set black border
+          panel.grid.major =  element_line(colour = "grey70", linewidth = 0.2), # set major grid lines
+          panel.grid.minor =  element_line(colour = "grey90", linewidth = 0.5), # set minor grid lines
+          legend.position = c(0.8, 0.25),
+          legend.background = element_rect(linewidth=0.5, linetype="solid", colour ="gray30"),
+          legend.title = element_text(size = rel(1.2), color = "black"),
+          legend.text = element_text(size = rel(1.2), color = "black")) +
+    scale_fill_manual(values = c("cornflowerblue", "darkred")) +
+    scale_color_manual(values = c("cornflowerblue", "darkred"))
+  ggsave(filename = "rpsu_byintensity_boxplot_cs1.png", rpsu_box_overtop_byintensity, width = 12, height = 8, units = "in")
+  
+## 7.1 By PI and Jetting Year ----
+  
+  for(i in 0:6){
+    
+    yearmetrics <- filter(metrics_box_byintensity, yearssince == i)
+    
+    dummybins <- data.frame(intensitybin = c("(0, 0.5] in/hr", "(0.5, 1.5] in/hr", "(1.5, 2.5] in/hr", "(2.5, Inf) in/hr"))
+    
+    metrics_boxbyjettingyear_truelabels <- group_by(yearmetrics, intensitybin, overtop) |>
+      summarize(count = n(), .groups = "drop") |>
+      filter(overtop == TRUE) |>
+      right_join(dummybins) |>
+      mutate(overtop = TRUE,
+             count = ifelse(is.na(count), 0, count))
+
+
+    metrics_boxbyjettingyear_falselabels <- group_by(yearmetrics, intensitybin, overtop) |>
+      summarize(count = n()) |>
+      filter(overtop == FALSE) |>
+      right_join(dummybins) |>
+      mutate(overtop = FALSE,
+             count = ifelse(is.na(count), 0, count))
+    
+    rpsu_boxsincejetting <- ggplot() +
+      geom_boxplot(data = yearmetrics,
+                   aes(x = intensitybin,
+                       y = rpsu, color = overtop, fill = overtop), alpha = 0.25) +
+      geom_label(data = metrics_boxbyjettingyear_truelabels,
+                 aes(x = intensitybin, y = 100, label = paste("n =", count), color = overtop), 
+                 fill = "white", position = position_nudge(x = 0.2), show.legend = FALSE) +
+      geom_label(data = metrics_boxbyjettingyear_falselabels,
+                 aes(x = intensitybin, y = 100, label = paste("n =", count), color = overtop), 
+                 fill = "white", position = position_nudge(x = -0.2), show.legend = FALSE) +
+      labs(color = "Weir Overtop?", 
+           fill = "Weir Overtop?",
+           x = "Years Since Last Pipe Jetting",
+           y = "Relative Percent of Storage Used",
+           title = paste(i, "Years Since Pipe Jetting at 61354")) +
+      theme(plot.title = element_text(size = rel(3), color = "black"),
+            plot.subtitle = element_text(size = rel(2), color = "black"),
+            axis.title = element_text(size = rel(2.2), color = "black"),
+            axis.text.x = element_text(size = rel(2), color = "black"), # set font size and color of x axis text #size previously set to 14
+            axis.text.y = element_text(size = rel(2), color = "black"), # set font size and color of y axis text
+            panel.background =  element_rect(fill = "white", colour = NA), # set white background
+            panel.border =      element_rect(fill = NA, colour="black"), # set black border
+            panel.grid.major =  element_line(colour = "grey70", linewidth = 0.2), # set major grid lines
+            panel.grid.minor =  element_line(colour = "grey90", linewidth = 0.5), # set minor grid lines
+            legend.position = c(0.8, 0.25),
+            legend.background = element_rect(linewidth=0.5, linetype="solid", colour ="gray30"),
+            legend.title = element_text(size = rel(1.2), color = "black"),
+            legend.text = element_text(size = rel(1.2), color = "black")) +
+      scale_fill_manual(values = c("cornflowerblue", "darkred")) +
+      scale_color_manual(values = c("cornflowerblue", "darkred"))
+    
+    ggsave(filename = paste0("rpsu_boxplot_byintensity_", i, "_years.png"), width = 12, height = 8, units = "in")
+    
+  }
+  
+  metrics_box_halfinch_byyear <- filter(metrics_box_byintensity, intensitybin == "(0, 0.5] in/hr")
+  
+  metrics_cs1_truelabels_byyear_halfinch <- group_by(metrics_box_halfinch_byyear, yearssince, overtop) |>
+    summarize(count = n()) |>
+    filter(overtop == TRUE)
+  
+  metrics_cs1_falselabels_byyear_halfinch <- group_by(metrics_box_halfinch_byyear, yearssince, overtop) |>
+    summarize(count = n()) |>
+    filter(overtop == FALSE)
+  
+  rpsu_box_overtop_byyear_halfinch <- ggplot() +
+    geom_boxplot(data = metrics_box_halfinch_byyear,
+                 aes(x = yearssince, y = rpsu, color = overtop, fill = overtop), alpha = 0.25) +
+    geom_label(data = metrics_cs1_truelabels_byyear_halfinch,
+               aes(x = yearssince, y = 100, label = paste("n =", count), color = overtop),
+               fill = "white", position = position_nudge(x = 0.2), show.legend = FALSE) +
+    geom_label(data = metrics_cs1_falselabels_byyear_halfinch,
+               aes(x = yearssince, y = 100, label = paste("n =", count), color = overtop),
+               fill = "white", position = position_nudge(x = -0.2), show.legend = FALSE) +
+    labs(color = "Weir Overtop?", 
+         fill = "Weir Overtop?",
+         x = "Years Since Pipe Jetting",
+         y = "Relative Percent of Storage Used",
+         title = "Overtopping During Storms of <=0.5 in/hr") +
+    theme(plot.title = element_text(size = rel(3), color = "black"),
+          plot.subtitle = element_text(size = rel(2), color = "black"),
+          axis.title = element_text(size = rel(2.2), color = "black"),
+          axis.text.x = element_text(size = rel(2), color = "black"), # set font size and color of x axis text #size previously set to 14
+          axis.text.y = element_text(size = rel(2), color = "black"), # set font size and color of y axis text
+          panel.background =  element_rect(fill = "white", colour = NA), # set white background
+          panel.border =      element_rect(fill = NA, colour="black"), # set black border
+          panel.grid.major =  element_line(colour = "grey70", linewidth = 0.2), # set major grid lines
+          panel.grid.minor =  element_line(colour = "grey90", linewidth = 0.5), # set minor grid lines
+          legend.position = c(0.8, 0.25),
+          legend.background = element_rect(linewidth=0.5, linetype="solid", colour ="gray30"),
+          legend.title = element_text(size = rel(1.2), color = "black"),
+          legend.text = element_text(size = rel(1.2), color = "black")) +
+    scale_fill_manual(values = c("cornflowerblue", "darkred")) +
+    scale_color_manual(values = c("cornflowerblue", "darkred"))
+  ggsave(filename = "rpsu_byintensity_boxplot_halfinch_cs1.png", rpsu_box_overtop_byyear_halfinch, width = 12, height = 8, units = "in")
+    
+  
+  metrics_box_oneinch_byyear <- filter(metrics_box_byintensity, intensitybin == "(0.5, 1.5] in/hr")
+  
+  metrics_cs1_truelabels_byyear_oneinch <- group_by(metrics_box_oneinch_byyear, yearssince, overtop) |>
+    summarize(count = n()) |>
+    filter(overtop == TRUE)
+  
+  metrics_cs1_falselabels_byyear_oneinch <- group_by(metrics_box_oneinch_byyear, yearssince, overtop) |>
+    summarize(count = n()) |>
+    filter(overtop == FALSE)
+  
+  rpsu_box_overtop_byyear_oneinch <- ggplot() +
+    geom_boxplot(data = metrics_box_oneinch_byyear,
+                 aes(x = yearssince, y = rpsu, color = overtop, fill = overtop), alpha = 0.25) +
+    geom_label(data = metrics_cs1_truelabels_byyear_oneinch,
+               aes(x = yearssince, y = 100, label = paste("n =", count), color = overtop),
+               fill = "white", position = position_nudge(x = 0.2), show.legend = FALSE) +
+    geom_label(data = metrics_cs1_falselabels_byyear_oneinch,
+               aes(x = yearssince, y = 100, label = paste("n =", count), color = overtop),
+               fill = "white", position = position_nudge(x = -0.2), show.legend = FALSE) +
+    labs(color = "Weir Overtop?", 
+         fill = "Weir Overtop?",
+         x = "Years Since Pipe Jetting",
+         y = "Relative Percent of Storage Used",
+         title = "Overtopping During Storms of 0.5 < x < =1.5 in/hr") +
+    theme(plot.title = element_text(size = rel(3), color = "black"),
+          plot.subtitle = element_text(size = rel(2), color = "black"),
+          axis.title = element_text(size = rel(2.2), color = "black"),
+          axis.text.x = element_text(size = rel(2), color = "black"), # set font size and color of x axis text #size previously set to 14
+          axis.text.y = element_text(size = rel(2), color = "black"), # set font size and color of y axis text
+          panel.background =  element_rect(fill = "white", colour = NA), # set white background
+          panel.border =      element_rect(fill = NA, colour="black"), # set black border
+          panel.grid.major =  element_line(colour = "grey70", linewidth = 0.2), # set major grid lines
+          panel.grid.minor =  element_line(colour = "grey90", linewidth = 0.5), # set minor grid lines
+          legend.position = c(0.8, 0.25),
+          legend.background = element_rect(linewidth=0.5, linetype="solid", colour ="gray30"),
+          legend.title = element_text(size = rel(1.2), color = "black"),
+          legend.text = element_text(size = rel(1.2), color = "black")) +
+    scale_fill_manual(values = c("cornflowerblue", "darkred")) +
+    scale_color_manual(values = c("cornflowerblue", "darkred"))
+  ggsave(filename = "rpsu_byintensity_boxplot_oneinch_cs1.png", rpsu_box_overtop_byyear_oneinch, width = 12, height = 8, units = "in")
+  
+#8.0 - Inflow theorizing ----
+  dcia <- 125698
+  peakrunoff_twofive_cfs <- round(dcia * 2.5 / 12 / 60 / 60, 3)
+  peakrunoff_actualpipe_cfs <- 4.144
+  theoreticalmax_inhr = round(peakrunoff_actualpipe_cfs * 60 * 60 * 12 / dcia, 3)
+  
+  peakrunoff_box <- metrics_box_byintensity |>
+    mutate(peakrunoff_cfs = round(eventpeakintensity_inhr * dcia / 12 / 60 / 60, 3))
+  
+  rpsu_scatter_peakrunoff <- ggplot() +
+    geom_point(data = peakrunoff_box,
+               aes(x = dtime, y = peakrunoff_cfs, color = overtop)) +
+    labs(color = "Weir Overtop?", ,
+         x = "Event Date",
+         y = "Impervious Runoff at Peak Intensity (CFS)",
+         title = "Overtopping at CS1 by Event Peak Runoff") +
+    geom_hline(yintercept = peakrunoff_twofive_cfs,
+               color = "orange") +
+    geom_hline(yintercept = peakrunoff_actualpipe_cfs,
+               color = "forestgreen") +
+    geom_label(aes(x = ymd("2020-05-01"),
+               y = peakrunoff_twofive_cfs),
+               label = "2.5 in/hr over DCIA",
+               fill = "white",
+               size = rel(5.5)) +
+    geom_label(aes(x = ymd("2020-05-01"),
+               y = peakrunoff_actualpipe_cfs),
+               label = "Theoretical Max Pipe Flow",
+               fill = "white",
+               size = rel(5.5)) +
+    theme(plot.title = element_text(size = rel(3), color = "black"),
+          plot.subtitle = element_text(size = rel(2), color = "black"),
+          axis.title = element_text(size = rel(2.2), color = "black"),
+          axis.text.x = element_text(size = rel(2), color = "black"), # set font size and color of x axis text #size previously set to 14
+          axis.text.y = element_text(size = rel(2), color = "black"), # set font size and color of y axis text
+          panel.background =  element_rect(fill = "white", colour = NA), # set white background
+          panel.border =      element_rect(fill = NA, colour="black"), # set black border
+          panel.grid.major =  element_line(colour = "grey70", linewidth = 0.2), # set major grid lines
+          panel.grid.minor =  element_line(colour = "grey90", linewidth = 0.5), # set minor grid lines
+          legend.position = c(0.8, 0.85),
+          legend.background = element_rect(linewidth=0.5, linetype="solid", colour ="gray30"),
+          legend.title = element_text(size = rel(1.2), color = "black"),
+          legend.text = element_text(size = rel(1.2), color = "black")) +
+    scale_color_manual(values = c("cornflowerblue", "darkred")) +
+    guides(color = guide_legend(override.aes = list(size = 5)))
+  
+  ggsave(filename = "rpsu_scatter_runoff.png", width = 12, height = 8, units = "in")
+    
   
