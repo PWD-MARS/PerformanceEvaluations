@@ -155,7 +155,7 @@ ggsave(paste0(smp_id,"/output/rpsu_vs_depth_", eval_end_date, ".png"))
 ggplot(data = smp_metrics, mapping = aes(x = eventdepth_in, y = rpsu, color = period)) + 
   geom_point() + 
   scale_color_manual(values = c('Before Repairs' = 'orange', 'After Repairs' = 'blue')) + 
-  labs(title = 'Relative Percent of Storage Used at SMP 63182',
+  labs(title = paste0('Relative Percent of Storage Used at SMP', smp_id),
        subtitle = 'All Rain Events in which both OW1 and CS1 were monitored') + 
   xlab('Rain Event Depth (in)') + 
   ylab('% Storage Used') + 
